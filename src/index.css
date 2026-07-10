@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+html {
+  font-family:
+    'Segoe UI',
+    Tahoma,
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+}
