@@ -1,24 +1,42 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>متابعة التدفقات النقدية الشهرية</title>
 <style>
   :root{
-    --ink:#0F172A;
-    --ink-soft:#334155;
+    --paper:#0B1420;
+    --card:#132238;
+    --card-alt:#0E1B2C;
+    --ink:#F2EFEA;
+    --ink-soft:#C7D0DD;
+    --slate:#93A2B8;
+    --slate-soft:#6C7B90;
+    --line:#22374F;
+    --success:#34D399;
+    --success-soft:rgba(52,211,153,.14);
+    --danger:#FB7185;
+    --danger-soft:rgba(251,113,133,.14);
+    --warning:#FBBF24;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+    --radius: 16px;
+  }
+  :root[data-theme="light"]{
     --paper:#F8FAFC;
     --card:#FFFFFF;
-    --line:#E2E8F0;
+    --card-alt:#F8FAFC;
+    --ink:#0F172A;
+    --ink-soft:#334155;
     --slate:#64748B;
     --slate-soft:#94A3B8;
+    --line:#E2E8F0;
     --success:#0E9F6E;
     --success-soft:#DCFCE7;
     --danger:#E11D48;
     --danger-soft:#FFE4E6;
+    --warning:#B45309;
     --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
-    --radius: 16px;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; }
@@ -28,9 +46,10 @@
     color:var(--ink);
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+    transition:background .2s ease, color .2s ease;
   }
   .mono{ font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; font-variant-numeric: tabular-nums; direction:ltr; unicode-bidi:plaintext; }
-  .wrap{ max-width:1040px; margin:0 auto; padding:0 0 80px; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 0 80px; }
 
   /* ---------- Setup gate ---------- */
   .gate{
@@ -51,11 +70,11 @@
     margin-bottom:24px;
   }
   header.top .inner{
-    max-width:1040px;
+    max-width:1100px;
     margin:0 auto;
-    padding:18px 20px 0;
+    padding:16px 20px 0;
   }
-  header.top .row{
+  .row1{
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -63,13 +82,27 @@
     flex-wrap:wrap;
     margin-bottom:14px;
   }
-  header.top h1{ font-size:17px; font-weight:700; margin:0; }
+  header.top h1{ font-size:16.5px; font-weight:700; margin:0; }
+  .controls{ display:flex; align-items:center; gap:8px; }
+  .icon-toggle{
+    width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px;
+  }
+  .icon-toggle:hover{ border-color:var(--success); }
+  .lang-toggle{
+    border-radius:18px; padding:0 13px; height:36px;
+    font-family:inherit; font-weight:700; font-size:12px;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink); cursor:pointer;
+  }
+  .lang-toggle:hover{ border-color:var(--success); }
 
   .month-nav{
     display:flex;
     align-items:center;
     gap:8px;
-    background:var(--paper);
+    background:var(--card-alt);
     border:1px solid var(--line);
     border-radius:10px;
     padding:6px;
@@ -88,25 +121,28 @@
     cursor:pointer;
   }
   .month-nav button:hover{ color:var(--ink); background:var(--card); }
-  .month-nav .label{ font-weight:700; font-size:13.5px; min-width:100px; text-align:center; }
+  .month-nav .label{ font-weight:700; font-size:13.5px; min-width:110px; text-align:center; }
+  .month-nav-row{ margin-bottom:14px; }
 
-  .tabs{ display:flex; gap:2px; }
+  .tabs{ display:flex; gap:2px; overflow-x:auto; padding-bottom:1px; scrollbar-width:thin; }
   .tab{
     appearance:none;
     border:none;
     background:transparent;
     font-family:inherit;
-    font-size:14px;
+    font-size:13.5px;
     font-weight:600;
     color:var(--slate);
-    padding:11px 16px;
+    padding:11px 14px;
     cursor:pointer;
     border-bottom:2px solid transparent;
+    white-space:nowrap;
+    flex-shrink:0;
   }
   .tab:hover{ color:var(--ink); }
   .tab.active{ color:var(--success); border-bottom-color:var(--success); }
 
-  main.content{ max-width:1040px; margin:0 auto; padding:0 20px; }
+  main.content{ max-width:1100px; margin:0 auto; padding:0 20px; }
 
   /* ---------- Cards / generic ---------- */
   .card{
@@ -118,23 +154,31 @@
   }
   .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; }
   .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:720px){ .grid-4{ grid-template-columns:1fr 1fr; } .grid-2{ grid-template-columns:1fr; } }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; }
+  @media (max-width:720px){ .grid-4{ grid-template-columns:1fr 1fr; } .grid-2{ grid-template-columns:1fr; } .grid-3{ grid-template-columns:1fr; } }
   @media (max-width:460px){ .grid-4{ grid-template-columns:1fr; } }
 
   .stat-tile .k{ font-size:12px; font-weight:600; color:var(--slate); margin-bottom:8px; }
-  .stat-tile .v{ font-size:21px; font-weight:700; }
+  .stat-tile .v{ font-size:20px; font-weight:700; }
   .v.positive{ color:var(--success); }
   .v.negative{ color:var(--danger); }
+  .stat-tile .edit-link{
+    display:inline-block; margin-top:8px; font-size:11.5px; color:var(--slate-soft);
+    background:none; border:none; cursor:pointer; font-family:inherit; padding:0; text-decoration:underline;
+  }
+  .stat-tile .edit-link:hover{ color:var(--success); }
 
   .breakdown h3{ font-size:15px; font-weight:700; margin:0 0 14px; }
   .breakdown .empty{ font-size:13px; color:var(--slate-soft); }
   .breakdown ul{ list-style:none; margin:0; padding:0; }
   .breakdown li{ margin-bottom:12px; }
   .breakdown li:last-child{ margin-bottom:0; }
-  .breakdown .line{ display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px; }
-  .breakdown .line .name{ color:var(--ink-soft); }
+  .breakdown .line{ display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px; margin-bottom:6px; gap:8px; }
+  .breakdown .line .name{ color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .breakdown .line .amt-wrap{ display:flex; align-items:baseline; gap:8px; flex-shrink:0; }
+  .breakdown .line .pct{ font-size:11.5px; color:var(--slate-soft); }
   .breakdown .line .amt{ font-weight:600; }
-  .bar-track{ height:6px; border-radius:6px; background:var(--paper); overflow:hidden; }
+  .bar-track{ height:6px; border-radius:6px; background:var(--card-alt); overflow:hidden; }
   .bar-fill{ height:100%; border-radius:6px; }
   .bar-fill.income{ background:var(--success); }
   .bar-fill.expense{ background:var(--danger); }
@@ -149,19 +193,20 @@
     padding:10px 12px;
     border-radius:9px;
     border:1.5px solid var(--line);
-    background:var(--paper);
+    background:var(--card-alt);
     color:var(--ink);
     outline:none;
   }
   .field input:focus, .field select:focus{ border-color:var(--success); }
-  .field .err{ font-size:12px; color:var(--danger); margin-top:6px; }
+  .field .err{ font-size:12px; color:var(--danger); margin-top:6px; min-height:0; }
+  .warn-text{ font-size:12px; color:var(--warning); margin-top:6px; }
 
   .type-toggle{ display:flex; gap:8px; margin-bottom:14px; }
   .type-btn{
     flex:1;
     appearance:none;
     border:1.5px solid var(--line);
-    background:var(--card);
+    background:var(--card-alt);
     color:var(--slate);
     font-family:inherit;
     font-size:13.5px;
@@ -170,8 +215,10 @@
     border-radius:9px;
     cursor:pointer;
   }
-  .type-btn.active-income{ background:var(--success); border-color:var(--success); color:#fff; }
-  .type-btn.active-expense{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .type-btn.active-income{ background:var(--success); border-color:var(--success); color:#08150F; }
+  .type-btn.active-expense{ background:var(--danger); border-color:var(--danger); color:#2B0710; }
+  :root[data-theme="light"] .type-btn.active-income{ color:#fff; }
+  :root[data-theme="light"] .type-btn.active-expense{ color:#fff; }
 
   .btn-primary{
     width:100%;
@@ -179,16 +226,18 @@
     border:none;
     border-radius:10px;
     background:var(--ink);
-    color:#fff;
+    color:var(--paper);
     font-family:inherit;
     font-weight:700;
     font-size:14.5px;
     padding:12px;
     cursor:pointer;
   }
-  .btn-primary:hover{ opacity:.92; }
-  .btn-primary.income-btn{ background:var(--success); }
-  .btn-primary.expense-btn{ background:var(--danger); }
+  .btn-primary:hover{ opacity:.9; }
+  .btn-primary.income-btn{ background:var(--success); color:#08150F; }
+  .btn-primary.expense-btn{ background:var(--danger); color:#2B0710; }
+  :root[data-theme="light"] .btn-primary.income-btn{ color:#fff; }
+  :root[data-theme="light"] .btn-primary.expense-btn{ color:#fff; }
   .btn-row{ display:flex; gap:8px; }
   .btn-ghost{
     appearance:none;
@@ -202,31 +251,33 @@
     border-radius:10px;
     cursor:pointer;
   }
-  .btn-ghost:hover{ background:var(--paper); }
+  .btn-ghost:hover{ background:var(--card-alt); color:var(--ink); }
+  .btn-block{ width:100%; }
 
   /* ---------- Transactions layout ---------- */
   .tx-layout{ display:grid; grid-template-columns:360px 1fr; gap:16px; align-items:start; }
   @media (max-width:820px){ .tx-layout{ grid-template-columns:1fr; } }
 
-  .tx-list-card{ padding:0; overflow:hidden; }
-  .tx-list-card .head{ padding:16px 20px; border-bottom:1px solid var(--line); font-weight:700; font-size:14.5px; }
+  .list-card{ padding:0; overflow:hidden; }
+  .list-card .head{ padding:16px 20px; border-bottom:1px solid var(--line); font-weight:700; font-size:14.5px; }
+  .table-scroll{ overflow-x:auto; }
   table{ width:100%; border-collapse:collapse; font-size:13.5px; }
-  thead th{ text-align:right; font-size:11.5px; font-weight:600; color:var(--slate); padding:8px 20px; border-bottom:1px solid var(--line); }
-  thead th.amt{ text-align:left; }
-  tbody td{ padding:12px 20px; border-bottom:1px solid #F1F5F9; color:var(--ink-soft); white-space:nowrap; }
+  thead th{ text-align:start; font-size:11.5px; font-weight:600; color:var(--slate); padding:8px 20px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th.amt{ text-align:end; }
+  tbody td{ padding:12px 20px; border-bottom:1px solid var(--line); color:var(--ink-soft); white-space:nowrap; }
   tbody tr:last-child td{ border-bottom:none; }
-  tbody tr:hover{ background:#FAFBFC; }
-  td.amt{ text-align:left; font-weight:700; }
+  tbody tr:hover{ background:var(--card-alt); }
+  td.amt{ text-align:end; font-weight:700; }
   td.amt.income{ color:var(--success); }
   td.amt.expense{ color:var(--danger); }
-  td.actions{ text-align:left; white-space:nowrap; }
+  td.actions{ text-align:end; white-space:nowrap; }
   .icon-btn{
     appearance:none; border:none; background:transparent; cursor:pointer;
     font-size:13px; padding:4px 6px; color:var(--slate-soft);
   }
   .icon-btn:hover{ color:var(--ink); }
   .icon-btn.danger:hover{ color:var(--danger); }
-  .tx-empty{ padding:36px 20px; text-align:center; font-size:13.5px; color:var(--slate-soft); }
+  .list-empty{ padding:36px 20px; text-align:center; font-size:13.5px; color:var(--slate-soft); }
 
   /* ---------- Categories ---------- */
   .cat-layout{ display:flex; gap:14px; flex-wrap:wrap; }
@@ -237,15 +288,15 @@
   .cat-list{ list-style:none; margin:0 0 14px; padding:0; }
   .cat-list li{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
-    background:var(--paper); border-radius:9px; padding:9px 12px; margin-bottom:8px;
+    background:var(--card-alt); border-radius:9px; padding:9px 12px; margin-bottom:8px;
   }
   .cat-list .name{ font-size:13.5px; color:var(--ink-soft); }
   .cat-list input.edit-name{
-    flex:1; font-family:inherit; font-size:13px; padding:5px 8px; border-radius:6px; border:1px solid var(--line);
+    flex:1; font-family:inherit; font-size:13px; padding:5px 8px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--ink);
   }
   .cat-add-row{ display:flex; gap:8px; }
   .cat-add-row input{
-    flex:1; font-family:inherit; font-size:13.5px; padding:10px 12px; border-radius:9px; border:1.5px solid var(--line); background:var(--paper);
+    flex:1; font-family:inherit; font-size:13.5px; padding:10px 12px; border-radius:9px; border:1.5px solid var(--line); background:var(--card-alt); color:var(--ink);
   }
   .cat-add-row button{
     appearance:none; border:none; border-radius:9px; color:#fff; font-family:inherit; font-weight:600; font-size:13.5px; padding:0 16px; cursor:pointer;
@@ -254,7 +305,43 @@
   .cat-col.expense .cat-add-row button{ background:var(--danger); }
   .cat-empty{ font-size:13px; color:var(--slate-soft); margin-bottom:10px; }
 
-  h2.section-title{ font-size:16px; font-weight:700; margin:4px 0 16px; }
+  h2.section-title{ font-size:16px; font-weight:700; margin:4px 0 4px; }
+  p.section-desc{ font-size:13px; color:var(--slate); margin:0 0 16px; line-height:1.6; }
+
+  /* ---------- Reports ---------- */
+  .cmp-bars{ display:flex; flex-direction:column; gap:3px; min-width:90px; }
+  .cmp-bar{ height:6px; border-radius:4px; background:var(--card-alt); }
+  .cmp-bar > div{ height:100%; border-radius:4px; }
+  .cmp-bar.income > div{ background:var(--success); }
+  .cmp-bar.expense > div{ background:var(--danger); }
+  td.net.positive{ color:var(--success); }
+  td.net.negative{ color:var(--danger); }
+
+  /* ---------- Credit cards ---------- */
+  .cards-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; margin-top:16px; }
+  .card-tile .top-row{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:8px; }
+  .card-tile .name{ font-size:15px; font-weight:700; }
+  .card-tile .limit{ font-size:12px; color:var(--slate); margin-top:3px; }
+  .card-tile .usage-line{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+  .card-tile .usage-line .used{ font-weight:700; }
+  .usage-track{ height:8px; border-radius:6px; background:var(--card-alt); overflow:hidden; margin-bottom:14px; }
+  .usage-fill{ height:100%; border-radius:6px; }
+  .usage-fill.ok{ background:var(--success); }
+  .usage-fill.warn{ background:var(--warning); }
+  .usage-fill.danger{ background:var(--danger); }
+  .card-tile .available{ font-size:12px; color:var(--slate); margin-bottom:14px; }
+  .card-edit-fields{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .card-edit-fields input{
+    font-family:inherit; font-size:13px; padding:8px 10px; border-radius:7px; border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
+  }
+  .card-back-btn{
+    display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--slate);
+    font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; padding:0; margin-bottom:16px;
+  }
+  .card-back-btn:hover{ color:var(--ink); }
+  .card-detail-header{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .card-detail-header h2{ font-size:17px; font-weight:700; margin:0 0 4px; }
+  .card-detail-header .sub{ font-size:12.5px; color:var(--slate); }
 </style>
 </head>
 <body>
@@ -262,7 +349,7 @@
 
 <script>
 (function () {
-  var STORAGE_KEY = 'thamer-cashflow-data-v1';
+  var STORAGE_KEY = 'thamer-cashflow-data-v2';
 
   var DEFAULT_CATEGORIES = [
     { id: 'inc-salary', name: 'راتب', type: 'income' },
@@ -273,19 +360,37 @@
     { id: 'exp-other', name: 'مصاريف أخرى', type: 'expense' }
   ];
 
+  function defaultState() {
+    return {
+      openingBalance: null,
+      openingBalanceDate: null,
+      categories: DEFAULT_CATEGORIES.slice(),
+      transactions: [],
+      creditCards: [],
+      cardTransactions: [],
+      theme: 'dark',
+      lang: 'ar'
+    };
+  }
+
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { openingBalance: null, openingBalanceDate: null, categories: DEFAULT_CATEGORIES.slice(), transactions: [] };
+      if (!raw) return defaultState();
       var parsed = JSON.parse(raw);
+      var d = defaultState();
       return {
         openingBalance: parsed.openingBalance != null ? parsed.openingBalance : null,
         openingBalanceDate: parsed.openingBalanceDate || null,
-        categories: parsed.categories || [],
-        transactions: parsed.transactions || []
+        categories: parsed.categories || d.categories,
+        transactions: parsed.transactions || [],
+        creditCards: parsed.creditCards || [],
+        cardTransactions: parsed.cardTransactions || [],
+        theme: parsed.theme || 'dark',
+        lang: parsed.lang || 'ar'
       };
     } catch (e) {
-      return { openingBalance: null, openingBalanceDate: null, categories: DEFAULT_CATEGORIES.slice(), transactions: [] };
+      return defaultState();
     }
   }
 
@@ -293,7 +398,10 @@
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 
-  var ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  var MONTHS = {
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December']
+  };
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
@@ -306,35 +414,223 @@
   }
   function formatMonthLabel(monthKey) {
     var parts = monthKey.split('-').map(Number);
-    return ARABIC_MONTHS[parts[1] - 1] + ' ' + parts[0];
+    return MONTHS[state.lang][parts[1] - 1] + ' ' + parts[0];
   }
   function formatCurrency(amount) {
     var rounded = Math.round(amount * 100) / 100;
-    return rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س';
+    return rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + t('currency_suffix');
   }
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function escapeAttr(str) { return escapeHtml(str).replace(/`/g, '&#96;'); }
 
+  // ---------------- i18n ----------------
+  var I18N = {
+    ar: {
+      brand_title: 'متابعة التدفقات النقدية الشهرية',
+      tab_summary: 'الملخص الشهري',
+      tab_transactions: 'العمليات اليومية',
+      tab_reports: 'التقارير',
+      tab_cards: 'البطاقات الائتمانية',
+      tab_categories: 'البنود',
+      month_prev: 'السابق',
+      month_next: 'التالي',
+      lang_toggle: 'EN',
+      gate_title: 'مرحبًا بك في متابعة التدفقات النقدية',
+      gate_desc: 'قبل البدء، أدخل رصيد النقد الافتتاحي وتاريخه ليكون أساس حساب رصيدك الشهري.',
+      gate_amount_label: 'الرصيد النقدي الافتتاحي',
+      gate_date_label: 'تاريخ الرصيد الافتتاحي',
+      gate_submit: 'بدء المتابعة',
+      err_invalid_balance: 'الرجاء إدخال رصيد صحيح',
+      stat_opening: 'الرصيد الافتتاحي',
+      stat_income: 'إجمالي المداخيل',
+      stat_expense: 'إجمالي المصاريف',
+      stat_closing: 'الرصيد الختامي',
+      edit_opening_link: 'تعديل الرصيد الافتتاحي',
+      save: 'حفظ',
+      cancel: 'إلغاء',
+      breakdown_income_title: 'المداخيل حسب البند',
+      breakdown_expense_title: 'المصاريف حسب البند',
+      breakdown_empty: 'لا توجد عمليات لهذا الشهر',
+      tx_form_title_new: 'تسجيل عملية جديدة',
+      tx_form_title_edit: 'تعديل العملية',
+      type_income: 'دخل',
+      type_expense: 'مصروف',
+      field_date: 'التاريخ',
+      field_amount: 'المبلغ',
+      field_category: 'البند',
+      field_category_placeholder: 'اختر البند',
+      field_note: 'ملاحظة (اختياري)',
+      no_categories_warning: 'لا توجد بنود لهذا النوع، أضِف بندًا من تبويب البنود أولًا.',
+      err_select_category: 'اختر البند',
+      err_amount: 'أدخل مبلغًا صحيحًا أكبر من صفر',
+      btn_add_tx: 'إضافة العملية',
+      btn_save_edit: 'حفظ التعديل',
+      tx_list_title: 'عمليات الشهر',
+      th_date: 'التاريخ',
+      th_category: 'البند',
+      th_note: 'ملاحظة',
+      th_amount: 'المبلغ',
+      tx_empty: 'لا توجد عمليات مسجلة لهذا الشهر بعد',
+      confirm_delete_tx: 'هل تريد حذف هذه العملية؟',
+      reports_title: 'مقارنة الأشهر',
+      reports_desc: 'مقارنة الرصيد الافتتاحي والمداخيل والمصاريف والرصيد الختامي عبر الأشهر.',
+      th_month: 'الشهر',
+      th_opening: 'الافتتاحي',
+      th_income: 'المداخيل',
+      th_expense: 'المصاريف',
+      th_net: 'صافي التغيّر',
+      th_closing: 'الختامي',
+      th_compare: 'مقارنة',
+      reports_empty: 'لا توجد بيانات كافية بعد لعرض التقرير',
+      categories_title: 'إدارة بنود المداخيل والمصاريف',
+      income_items_title: 'بنود المداخيل',
+      expense_items_title: 'بنود المصاريف',
+      new_income_item_placeholder: 'بند دخل جديد',
+      new_expense_item_placeholder: 'بند مصروف جديد',
+      add: 'إضافة',
+      no_items_yet: 'لا توجد بنود بعد',
+      cards_title: 'البطاقات الائتمانية',
+      cards_desc: 'أضِف بطاقاتك الائتمانية وحدودها، وسجّل عمليات الشراء والسداد على كل بطاقة لمتابعة استخدامك.',
+      card_name_label: 'اسم البطاقة',
+      card_name_placeholder: 'مثال: بطاقة الراجحي',
+      card_limit_label: 'الحد الائتماني',
+      add_card_btn: 'إضافة بطاقة',
+      card_used: 'المستخدم',
+      card_available: 'المتاح',
+      card_view_btn: 'عرض العمليات',
+      cards_empty: 'لا توجد بطاقات مضافة بعد',
+      back_to_cards: 'رجوع للبطاقات',
+      card_tx_form_title_new: 'تسجيل عملية على البطاقة',
+      card_tx_form_title_edit: 'تعديل عملية البطاقة',
+      type_purchase: 'عملية شراء',
+      type_payment: 'سداد',
+      card_tx_list_title: 'عمليات البطاقة',
+      card_tx_empty: 'لا توجد عمليات على هذه البطاقة بعد',
+      err_card_name: 'أدخل اسم البطاقة',
+      err_card_limit: 'أدخل حدًا ائتمانيًا صحيحًا أكبر من صفر',
+      th_type: 'النوع',
+      currency_suffix: 'ر.س'
+    },
+    en: {
+      brand_title: 'Monthly Cash Flow Tracker',
+      tab_summary: 'Monthly Summary',
+      tab_transactions: 'Daily Transactions',
+      tab_reports: 'Reports',
+      tab_cards: 'Credit Cards',
+      tab_categories: 'Items',
+      month_prev: 'Previous',
+      month_next: 'Next',
+      lang_toggle: 'AR',
+      gate_title: 'Welcome to your Cash Flow Tracker',
+      gate_desc: 'Before you start, enter your opening cash balance and its date — this is the base for your monthly balance calculations.',
+      gate_amount_label: 'Opening Cash Balance',
+      gate_date_label: 'Opening Balance Date',
+      gate_submit: 'Get Started',
+      err_invalid_balance: 'Please enter a valid balance',
+      stat_opening: 'Opening Balance',
+      stat_income: 'Total Income',
+      stat_expense: 'Total Expenses',
+      stat_closing: 'Closing Balance',
+      edit_opening_link: 'Edit opening balance',
+      save: 'Save',
+      cancel: 'Cancel',
+      breakdown_income_title: 'Income by Category',
+      breakdown_expense_title: 'Expenses by Category',
+      breakdown_empty: 'No transactions this month',
+      tx_form_title_new: 'Log New Transaction',
+      tx_form_title_edit: 'Edit Transaction',
+      type_income: 'Income',
+      type_expense: 'Expense',
+      field_date: 'Date',
+      field_amount: 'Amount',
+      field_category: 'Category',
+      field_category_placeholder: 'Select category',
+      field_note: 'Note (optional)',
+      no_categories_warning: 'No categories of this type yet — add one from the Items tab first.',
+      err_select_category: 'Select a category',
+      err_amount: 'Enter a valid amount greater than zero',
+      btn_add_tx: 'Add Transaction',
+      btn_save_edit: 'Save Changes',
+      tx_list_title: "This Month's Transactions",
+      th_date: 'Date',
+      th_category: 'Category',
+      th_note: 'Note',
+      th_amount: 'Amount',
+      tx_empty: 'No transactions logged this month yet',
+      confirm_delete_tx: 'Delete this transaction?',
+      reports_title: 'Monthly Comparison',
+      reports_desc: "Compare opening balance, income, expenses and closing balance across months.",
+      th_month: 'Month',
+      th_opening: 'Opening',
+      th_income: 'Income',
+      th_expense: 'Expenses',
+      th_net: 'Net Change',
+      th_closing: 'Closing',
+      th_compare: 'Comparison',
+      reports_empty: 'Not enough data yet to show a report',
+      categories_title: 'Manage Income & Expense Items',
+      income_items_title: 'Income Items',
+      expense_items_title: 'Expense Items',
+      new_income_item_placeholder: 'New income item',
+      new_expense_item_placeholder: 'New expense item',
+      add: 'Add',
+      no_items_yet: 'No items yet',
+      cards_title: 'Credit Cards',
+      cards_desc: 'Add your credit cards and their limits, and log purchases and payments on each card to track your usage.',
+      card_name_label: 'Card Name',
+      card_name_placeholder: 'e.g. Al Rajhi Card',
+      card_limit_label: 'Credit Limit',
+      add_card_btn: 'Add Card',
+      card_used: 'Used',
+      card_available: 'Available',
+      card_view_btn: 'View Transactions',
+      cards_empty: 'No cards added yet',
+      back_to_cards: 'Back to Cards',
+      card_tx_form_title_new: 'Log Card Transaction',
+      card_tx_form_title_edit: 'Edit Card Transaction',
+      type_purchase: 'Purchase',
+      type_payment: 'Payment',
+      card_tx_list_title: 'Card Transactions',
+      card_tx_empty: 'No transactions on this card yet',
+      err_card_name: 'Enter the card name',
+      err_card_limit: 'Enter a valid credit limit greater than zero',
+      th_type: 'Type',
+      currency_suffix: 'SAR'
+    }
+  };
+
+  function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || key; }
+
+  function applyDocumentLangTheme() {
+    var html = document.documentElement;
+    html.setAttribute('lang', state.lang);
+    html.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+    html.setAttribute('data-theme', state.theme);
+    document.title = t('brand_title');
+  }
+
+  // ---------------- Finance calculations ----------------
   function computeMonthSummary(monthKey) {
     var opening = state.openingBalance != null ? state.openingBalance : 0;
     var priorNet = 0, monthIncome = 0, monthExpense = 0;
     var incomeTotals = {}, expenseTotals = {};
 
-    state.transactions.forEach(function (t) {
-      var tKey = monthKeyOf(t.date);
-      var signed = t.type === 'income' ? t.amount : -t.amount;
+    state.transactions.forEach(function (tx) {
+      var tKey = monthKeyOf(tx.date);
+      var signed = tx.type === 'income' ? tx.amount : -tx.amount;
       if (tKey < monthKey) {
         priorNet += signed;
       } else if (tKey === monthKey) {
-        if (t.type === 'income') {
-          monthIncome += t.amount;
-          incomeTotals[t.categoryId] = (incomeTotals[t.categoryId] || 0) + t.amount;
+        if (tx.type === 'income') {
+          monthIncome += tx.amount;
+          incomeTotals[tx.categoryId] = (incomeTotals[tx.categoryId] || 0) + tx.amount;
         } else {
-          monthExpense += t.amount;
-          expenseTotals[t.categoryId] = (expenseTotals[t.categoryId] || 0) + t.amount;
+          monthExpense += tx.amount;
+          expenseTotals[tx.categoryId] = (expenseTotals[tx.categoryId] || 0) + tx.amount;
         }
       }
     });
@@ -342,10 +638,12 @@
     var catById = {};
     state.categories.forEach(function (c) { catById[c.id] = c; });
 
-    function toBreakdown(totals) {
+    function toBreakdown(totals, total) {
       return Object.keys(totals).map(function (categoryId) {
-        var category = catById[categoryId] || { id: categoryId, name: 'بند محذوف' };
-        return { category: category, total: totals[categoryId] };
+        var category = catById[categoryId] || { id: categoryId, name: t('field_category') };
+        var amt = totals[categoryId];
+        var pct = total > 0 ? Math.round((amt / total) * 100) : 0;
+        return { category: category, total: amt, pct: pct };
       }).sort(function (a, b) { return b.total - a.total; });
     }
 
@@ -356,9 +654,43 @@
       totalIncome: monthIncome,
       totalExpense: monthExpense,
       closingBalance: openingBalance + monthIncome - monthExpense,
-      incomeByCategory: toBreakdown(incomeTotals),
-      expenseByCategory: toBreakdown(expenseTotals)
+      incomeByCategory: toBreakdown(incomeTotals, monthIncome),
+      expenseByCategory: toBreakdown(expenseTotals, monthExpense)
     };
+  }
+
+  function getReportMonthKeys() {
+    var earliest = null;
+    if (state.openingBalanceDate) earliest = monthKeyOf(state.openingBalanceDate);
+    state.transactions.forEach(function (tx) {
+      var k = monthKeyOf(tx.date);
+      if (earliest === null || k < earliest) earliest = k;
+    });
+    var latest = currentMonthKey();
+    state.transactions.forEach(function (tx) {
+      var k = monthKeyOf(tx.date);
+      if (k > latest) latest = k;
+    });
+    if (earliest === null) earliest = latest;
+
+    var keys = [];
+    var cursor = earliest;
+    var guard = 0;
+    while (cursor <= latest && guard < 240) {
+      keys.push(cursor);
+      cursor = shiftMonth(cursor, 1);
+      guard++;
+    }
+    return keys.reverse();
+  }
+
+  function computeCardBalance(cardId) {
+    var balance = 0;
+    state.cardTransactions.forEach(function (tx) {
+      if (tx.cardId !== cardId) return;
+      balance += tx.type === 'purchase' ? tx.amount : -tx.amount;
+    });
+    return balance;
   }
 
   // ---------------- App state ----------------
@@ -367,11 +699,18 @@
   var currentMonth = currentMonthKey();
   var editingTransactionId = null;
   var editingCategoryId = null;
+  var editingOpeningBalance = false;
   var txFormType = 'income';
+
+  var selectedCardId = null;
+  var editingCardId = null;
+  var editingCardTxId = null;
+  var cardTxFormType = 'purchase';
 
   var app = document.getElementById('app');
 
   function render() {
+    applyDocumentLangTheme();
     if (state.openingBalance === null) {
       app.innerHTML = renderGate();
       return;
@@ -382,41 +721,51 @@
   function renderGate() {
     return (
       '<div class="gate"><div class="card">' +
-      '<h1>مرحبًا بك في متابعة التدفقات النقدية</h1>' +
-      '<p class="desc">قبل البدء، أدخل رصيد النقد الافتتاحي وتاريخه ليكون أساس حساب رصيدك الشهري.</p>' +
+      '<h1>' + t('gate_title') + '</h1>' +
+      '<p class="desc">' + t('gate_desc') + '</p>' +
       '<form id="setup-form">' +
-      '<div class="field"><label>الرصيد النقدي الافتتاحي</label>' +
+      '<div class="field"><label>' + t('gate_amount_label') + '</label>' +
       '<input type="number" step="0.01" id="setup-amount" placeholder="0.00" autofocus></div>' +
-      '<div class="field"><label>تاريخ الرصيد الافتتاحي</label>' +
+      '<div class="field"><label>' + t('gate_date_label') + '</label>' +
       '<input type="date" id="setup-date" value="' + todayStr() + '"></div>' +
       '<div id="setup-err" class="err"></div>' +
-      '<button type="submit" class="btn-primary">بدء المتابعة</button>' +
+      '<button type="submit" class="btn-primary">' + t('gate_submit') + '</button>' +
       '</form></div></div>'
     );
   }
 
   function renderHeader() {
     var tabs = [
-      { key: 'summary', label: 'الملخص الشهري' },
-      { key: 'transactions', label: 'العمليات اليومية' },
-      { key: 'categories', label: 'البنود' }
+      { key: 'summary', label: t('tab_summary') },
+      { key: 'transactions', label: t('tab_transactions') },
+      { key: 'reports', label: t('tab_reports') },
+      { key: 'cards', label: t('tab_cards') },
+      { key: 'categories', label: t('tab_categories') }
     ];
-    var tabsHtml = tabs.map(function (t) {
-      return '<button class="tab' + (currentTab === t.key ? ' active' : '') + '" data-action="tab" data-tab="' + t.key + '">' + t.label + '</button>';
+    var tabsHtml = tabs.map(function (tb) {
+      return '<button class="tab' + (currentTab === tb.key ? ' active' : '') + '" data-action="tab" data-tab="' + tb.key + '">' + tb.label + '</button>';
     }).join('');
 
-    var monthNav = currentTab !== 'categories'
-      ? '<div class="month-nav">' +
-        '<button data-action="prev-month">السابق</button>' +
+    var showMonthNav = currentTab === 'summary' || currentTab === 'transactions';
+    var monthNavRow = showMonthNav
+      ? '<div class="month-nav-row"><div class="month-nav">' +
+        '<button data-action="prev-month">' + t('month_prev') + '</button>' +
         '<span class="label">' + formatMonthLabel(currentMonth) + '</span>' +
-        '<button data-action="next-month">التالي</button>' +
-        '</div>'
+        '<button data-action="next-month">' + t('month_next') + '</button>' +
+        '</div></div>'
       : '';
+
+    var themeIcon = state.theme === 'dark' ? '☀️' : '🌙';
 
     return (
       '<header class="top"><div class="inner">' +
-      '<div class="row"><h1>متابعة التدفقات النقدية الشهرية</h1>' + monthNav + '</div>' +
+      '<div class="row1"><h1>' + t('brand_title') + '</h1>' +
+      '<div class="controls">' +
+      '<button class="lang-toggle" data-action="toggle-lang">' + t('lang_toggle') + '</button>' +
+      '<button class="icon-toggle" data-action="toggle-theme" title="theme">' + themeIcon + '</button>' +
+      '</div></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
+      monthNavRow +
       '</div></header>'
     );
   }
@@ -424,28 +773,51 @@
   function renderTabContent() {
     if (currentTab === 'summary') return renderSummary();
     if (currentTab === 'transactions') return renderTransactions();
+    if (currentTab === 'reports') return renderReports();
+    if (currentTab === 'cards') return renderCards();
     if (currentTab === 'categories') return renderCategories();
     return '';
   }
 
+  // ---------------- Summary tab ----------------
   function renderSummary() {
     var s = computeMonthSummary(currentMonth);
+    var closingCls = s.closingBalance >= 0 ? 'positive' : 'negative';
+
+    var openingTile;
+    if (editingOpeningBalance) {
+      openingTile = (
+        '<form id="opening-edit-form" class="card stat-tile">' +
+        '<div class="k">' + t('stat_opening') + '</div>' +
+        '<div class="field" style="margin-bottom:8px;"><input type="number" step="0.01" id="opening-edit-amount" value="' + state.openingBalance + '"></div>' +
+        '<div class="field" style="margin-bottom:8px;"><input type="date" id="opening-edit-date" value="' + (state.openingBalanceDate || todayStr()) + '"></div>' +
+        '<div id="opening-edit-err" class="err"></div>' +
+        '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('save') + '</button>' +
+        '<button type="button" class="btn-ghost" data-action="cancel-edit-opening">' + t('cancel') + '</button></div>' +
+        '</form>'
+      );
+    } else {
+      openingTile = (
+        '<div class="card stat-tile"><div class="k">' + t('stat_opening') + '</div><div class="v">' + formatCurrency(s.openingBalance) + '</div>' +
+        '<button class="edit-link" data-action="edit-opening">✏️ ' + t('edit_opening_link') + '</button></div>'
+      );
+    }
+
     function statTile(label, value, cls) {
       return '<div class="card stat-tile"><div class="k">' + label + '</div><div class="v ' + cls + '">' + formatCurrency(value) + '</div></div>';
     }
-    var closingCls = s.closingBalance >= 0 ? 'positive' : 'negative';
 
-    function breakdown(title, items, total, barCls) {
+    function breakdown(title, items, barCls) {
       var inner;
       if (items.length === 0) {
-        inner = '<p class="empty">لا توجد عمليات لهذا الشهر</p>';
+        inner = '<p class="empty">' + t('breakdown_empty') + '</p>';
       } else {
         inner = '<ul>' + items.map(function (it) {
-          var pct = total > 0 ? Math.round((it.total / total) * 100) : 0;
           return (
             '<li><div class="line"><span class="name">' + escapeHtml(it.category.name) + '</span>' +
-            '<span class="amt mono">' + formatCurrency(it.total) + '</span></div>' +
-            '<div class="bar-track"><div class="bar-fill ' + barCls + '" style="width:' + pct + '%"></div></div></li>'
+            '<span class="amt-wrap"><span class="pct mono">' + it.pct + '%</span>' +
+            '<span class="amt mono">' + formatCurrency(it.total) + '</span></span></div>' +
+            '<div class="bar-track"><div class="bar-fill ' + barCls + '" style="width:' + it.pct + '%"></div></div></li>'
           );
         }).join('') + '</ul>';
       }
@@ -454,24 +826,25 @@
 
     return (
       '<div class="grid-4">' +
-      statTile('الرصيد الافتتاحي', s.openingBalance, '') +
-      statTile('إجمالي المداخيل', s.totalIncome, 'positive') +
-      statTile('إجمالي المصاريف', s.totalExpense, 'negative') +
-      statTile('الرصيد الختامي', s.closingBalance, closingCls) +
+      openingTile +
+      statTile(t('stat_income'), s.totalIncome, 'positive') +
+      statTile(t('stat_expense'), s.totalExpense, 'negative') +
+      statTile(t('stat_closing'), s.closingBalance, closingCls) +
       '</div>' +
       '<div class="grid-2">' +
-      breakdown('المداخيل حسب البند', s.incomeByCategory, s.totalIncome, 'income') +
-      breakdown('المصاريف حسب البند', s.expenseByCategory, s.totalExpense, 'expense') +
+      breakdown(t('breakdown_income_title'), s.incomeByCategory, 'income') +
+      breakdown(t('breakdown_expense_title'), s.expenseByCategory, 'expense') +
       '</div>'
     );
   }
 
+  // ---------------- Transactions tab ----------------
   function renderTransactions() {
     return '<div class="tx-layout">' + renderTransactionForm() + renderTransactionList() + '</div>';
   }
 
   function renderTransactionForm() {
-    var editingTx = editingTransactionId ? state.transactions.find(function (t) { return t.id === editingTransactionId; }) : null;
+    var editingTx = editingTransactionId ? state.transactions.find(function (tx) { return tx.id === editingTransactionId; }) : null;
     var type = editingTx ? editingTx.type : txFormType;
     var date = editingTx ? editingTx.date : todayStr();
     var amount = editingTx ? editingTx.amount : '';
@@ -479,31 +852,31 @@
     var categoryId = editingTx ? editingTx.categoryId : '';
 
     var cats = state.categories.filter(function (c) { return c.type === type; });
-    var catOptions = '<option value="">اختر البند</option>' + cats.map(function (c) {
+    var catOptions = '<option value="">' + t('field_category_placeholder') + '</option>' + cats.map(function (c) {
       return '<option value="' + c.id + '"' + (c.id === categoryId ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>';
     }).join('');
-    var catWarning = cats.length === 0 ? '<p style="font-size:12px;color:#B45309;margin-top:6px;">لا توجد بنود لهذا النوع، أضِف بندًا من تبويب البنود أولًا.</p>' : '';
+    var catWarning = cats.length === 0 ? '<p class="warn-text">' + t('no_categories_warning') + '</p>' : '';
 
     var submitBtnCls = type === 'income' ? 'income-btn' : 'expense-btn';
 
     return (
-      '<form id="transaction-form" class="card" data-editing="' + (editingTx ? editingTx.id : '') + '">' +
-      '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingTx ? 'تعديل العملية' : 'تسجيل عملية جديدة') + '</h3>' +
+      '<form id="transaction-form" class="card">' +
+      '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingTx ? t('tx_form_title_edit') : t('tx_form_title_new')) + '</h3>' +
       '<div class="type-toggle">' +
-      '<button type="button" data-action="set-tx-type" data-type="income" class="type-btn' + (type === 'income' ? ' active-income' : '') + '">دخل</button>' +
-      '<button type="button" data-action="set-tx-type" data-type="expense" class="type-btn' + (type === 'expense' ? ' active-expense' : '') + '">مصروف</button>' +
+      '<button type="button" data-action="set-tx-type" data-type="income" class="type-btn' + (type === 'income' ? ' active-income' : '') + '">' + t('type_income') + '</button>' +
+      '<button type="button" data-action="set-tx-type" data-type="expense" class="type-btn' + (type === 'expense' ? ' active-expense' : '') + '">' + t('type_expense') + '</button>' +
       '</div>' +
       '<input type="hidden" id="tx-type" value="' + type + '">' +
       '<div class="grid-2">' +
-      '<div class="field"><label>التاريخ</label><input type="date" id="tx-date" value="' + date + '"></div>' +
-      '<div class="field"><label>المبلغ</label><input type="number" step="0.01" id="tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="tx-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
-      '<div class="field"><label>البند</label><select id="tx-category">' + catOptions + '</select>' + catWarning + '</div>' +
-      '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="tx-note" value="' + escapeHtml(note) + '"></div>' +
+      '<div class="field"><label>' + t('field_category') + '</label><select id="tx-category">' + catOptions + '</select>' + catWarning + '</div>' +
+      '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="tx-note" value="' + escapeAttr(note) + '"></div>' +
       '<div id="tx-err" class="err"></div>' +
       '<div class="btn-row">' +
-      '<button type="submit" class="btn-primary ' + submitBtnCls + '">' + (editingTx ? 'حفظ التعديل' : 'إضافة العملية') + '</button>' +
-      (editingTx ? '<button type="button" class="btn-ghost" data-action="cancel-edit-tx">إلغاء</button>' : '') +
+      '<button type="submit" class="btn-primary ' + submitBtnCls + '">' + (editingTx ? t('btn_save_edit') : t('btn_add_tx')) + '</button>' +
+      (editingTx ? '<button type="button" class="btn-ghost" data-action="cancel-edit-tx">' + t('cancel') + '</button>' : '') +
       '</div>' +
       '</form>'
     );
@@ -513,62 +886,104 @@
     var catById = {};
     state.categories.forEach(function (c) { catById[c.id] = c; });
     var txs = state.transactions
-      .filter(function (t) { return monthKeyOf(t.date) === currentMonth; })
+      .filter(function (tx) { return monthKeyOf(tx.date) === currentMonth; })
       .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 
     var body;
     if (txs.length === 0) {
-      body = '<div class="tx-empty">لا توجد عمليات مسجلة لهذا الشهر بعد</div>';
+      body = '<div class="list-empty">' + t('tx_empty') + '</div>';
     } else {
-      var rows = txs.map(function (t) {
-        var cat = catById[t.categoryId];
-        var sign = t.type === 'income' ? '+' : '-';
+      var rows = txs.map(function (tx) {
+        var cat = catById[tx.categoryId];
+        var sign = tx.type === 'income' ? '+' : '-';
         return (
           '<tr>' +
-          '<td>' + t.date + '</td>' +
-          '<td>' + (cat ? escapeHtml(cat.name) : 'بند محذوف') + '</td>' +
-          '<td>' + (t.note ? escapeHtml(t.note) : '—') + '</td>' +
-          '<td class="amt mono ' + t.type + '">' + sign + formatCurrency(t.amount) + '</td>' +
+          '<td>' + tx.date + '</td>' +
+          '<td>' + (cat ? escapeHtml(cat.name) : '—') + '</td>' +
+          '<td>' + (tx.note ? escapeHtml(tx.note) : '—') + '</td>' +
+          '<td class="amt mono ' + tx.type + '">' + sign + formatCurrency(tx.amount) + '</td>' +
           '<td class="actions">' +
-          '<button class="icon-btn" data-action="edit-tx" data-id="' + t.id + '" title="تعديل">✏️</button>' +
-          '<button class="icon-btn danger" data-action="delete-tx" data-id="' + t.id + '" title="حذف">🗑️</button>' +
+          '<button class="icon-btn" data-action="edit-tx" data-id="' + tx.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-tx" data-id="' + tx.id + '" title="delete">🗑️</button>' +
           '</td></tr>'
         );
       }).join('');
       body = (
-        '<div style="overflow-x:auto"><table><thead><tr>' +
-        '<th>التاريخ</th><th>البند</th><th>ملاحظة</th><th class="amt">المبلغ</th><th></th>' +
+        '<div class="table-scroll"><table><thead><tr>' +
+        '<th>' + t('th_date') + '</th><th>' + t('th_category') + '</th><th>' + t('th_note') + '</th><th class="amt">' + t('th_amount') + '</th><th></th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>'
       );
     }
 
     return (
-      '<div class="card tx-list-card">' +
-      '<div class="head">عمليات الشهر (' + txs.length + ')</div>' +
+      '<div class="card list-card">' +
+      '<div class="head">' + t('tx_list_title') + ' (' + txs.length + ')</div>' +
       body +
       '</div>'
     );
   }
 
+  // ---------------- Reports tab ----------------
+  function renderReports() {
+    var monthKeys = getReportMonthKeys();
+    if (monthKeys.length === 0) {
+      return '<h2 class="section-title">' + t('reports_title') + '</h2><p class="section-desc">' + t('reports_desc') + '</p><div class="card"><p class="empty">' + t('reports_empty') + '</p></div>';
+    }
+    var rows = monthKeys.map(function (mk) { return computeMonthSummary(mk); });
+    var maxVal = 1;
+    rows.forEach(function (r) { maxVal = Math.max(maxVal, r.totalIncome, r.totalExpense); });
+
+    var trs = rows.map(function (r) {
+      var net = r.totalIncome - r.totalExpense;
+      var netCls = net >= 0 ? 'positive' : 'negative';
+      var incPct = Math.round((r.totalIncome / maxVal) * 100);
+      var expPct = Math.round((r.totalExpense / maxVal) * 100);
+      return (
+        '<tr>' +
+        '<td>' + formatMonthLabel(r.monthKey) + '</td>' +
+        '<td class="mono">' + formatCurrency(r.openingBalance) + '</td>' +
+        '<td class="mono" style="color:var(--success)">' + formatCurrency(r.totalIncome) + '</td>' +
+        '<td class="mono" style="color:var(--danger)">' + formatCurrency(r.totalExpense) + '</td>' +
+        '<td class="mono net ' + netCls + '">' + (net >= 0 ? '+' : '') + formatCurrency(net) + '</td>' +
+        '<td class="mono" style="font-weight:700;">' + formatCurrency(r.closingBalance) + '</td>' +
+        '<td><div class="cmp-bars">' +
+        '<div class="cmp-bar income"><div style="width:' + incPct + '%"></div></div>' +
+        '<div class="cmp-bar expense"><div style="width:' + expPct + '%"></div></div>' +
+        '</div></td>' +
+        '</tr>'
+      );
+    }).join('');
+
+    return (
+      '<h2 class="section-title">' + t('reports_title') + '</h2>' +
+      '<p class="section-desc">' + t('reports_desc') + '</p>' +
+      '<div class="card list-card"><div class="table-scroll"><table><thead><tr>' +
+      '<th>' + t('th_month') + '</th><th>' + t('th_opening') + '</th><th>' + t('th_income') + '</th>' +
+      '<th>' + t('th_expense') + '</th><th>' + t('th_net') + '</th><th>' + t('th_closing') + '</th><th>' + t('th_compare') + '</th>' +
+      '</tr></thead><tbody>' + trs + '</tbody></table></div></div>'
+    );
+  }
+
+  // ---------------- Categories tab ----------------
   function renderCategories() {
     function col(type, title) {
       var cats = state.categories.filter(function (c) { return c.type === type; });
       var items;
       if (cats.length === 0) {
-        items = '<p class="cat-empty">لا توجد بنود بعد</p>';
+        items = '<p class="cat-empty">' + t('no_items_yet') + '</p>';
       } else {
         items = '<ul class="cat-list">' + cats.map(function (c) {
           if (editingCategoryId === c.id) {
             return (
-              '<li><input class="edit-name" id="edit-cat-input" value="' + escapeHtml(c.name) + '" data-id="' + c.id + '">' +
-              '<div><button class="icon-btn" data-action="save-cat-edit" data-id="' + c.id + '" title="حفظ">✔️</button>' +
-              '<button class="icon-btn" data-action="cancel-cat-edit" title="إلغاء">✖️</button></div></li>'
+              '<li><input class="edit-name" id="edit-cat-input" value="' + escapeAttr(c.name) + '" data-id="' + c.id + '">' +
+              '<div><button class="icon-btn" data-action="save-cat-edit" data-id="' + c.id + '" title="save">✔️</button>' +
+              '<button class="icon-btn" data-action="cancel-cat-edit" title="cancel">✖️</button></div></li>'
             );
           }
           return (
             '<li><span class="name">' + escapeHtml(c.name) + '</span>' +
-            '<div><button class="icon-btn" data-action="edit-cat" data-id="' + c.id + '" title="تعديل">✏️</button>' +
-            '<button class="icon-btn danger" data-action="delete-cat" data-id="' + c.id + '" data-name="' + escapeHtml(c.name) + '" title="حذف">🗑️</button></div></li>'
+            '<div><button class="icon-btn" data-action="edit-cat" data-id="' + c.id + '" title="edit">✏️</button>' +
+            '<button class="icon-btn danger" data-action="delete-cat" data-id="' + c.id + '" data-name="' + escapeAttr(c.name) + '" title="delete">🗑️</button></div></li>'
           );
         }).join('') + '</ul>';
       }
@@ -576,14 +991,179 @@
         '<div class="card cat-col ' + type + '">' +
         '<h3>' + title + '</h3>' + items +
         '<form class="cat-add-row" data-action="add-cat" data-type="' + type + '">' +
-        '<input type="text" placeholder="' + (type === 'income' ? 'بند دخل جديد' : 'بند مصروف جديد') + '" id="new-cat-' + type + '">' +
-        '<button type="submit">إضافة</button>' +
+        '<input type="text" placeholder="' + (type === 'income' ? t('new_income_item_placeholder') : t('new_expense_item_placeholder')) + '" id="new-cat-' + type + '">' +
+        '<button type="submit">' + t('add') + '</button>' +
         '</form></div>'
       );
     }
     return (
-      '<h2 class="section-title">إدارة بنود المداخيل والمصاريف</h2>' +
-      '<div class="cat-layout">' + col('income', 'بنود المداخيل') + col('expense', 'بنود المصاريف') + '</div>'
+      '<h2 class="section-title">' + t('categories_title') + '</h2><p class="section-desc">&nbsp;</p>' +
+      '<div class="cat-layout">' + col('income', t('income_items_title')) + col('expense', t('expense_items_title')) + '</div>'
+    );
+  }
+
+  // ---------------- Credit cards tab ----------------
+  function renderCards() {
+    if (selectedCardId) {
+      var card = state.creditCards.find(function (c) { return c.id === selectedCardId; });
+      if (card) return renderCardDetail(card);
+      selectedCardId = null;
+    }
+    return renderCardsList();
+  }
+
+  function usageLevelClass(pct) {
+    if (pct >= 90) return 'danger';
+    if (pct >= 70) return 'warn';
+    return 'ok';
+  }
+
+  function renderCardsList() {
+    var addForm = (
+      '<form id="card-form" class="card" style="margin-bottom:16px;">' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('card_name_label') + '</label><input type="text" id="card-name" placeholder="' + t('card_name_placeholder') + '"></div>' +
+      '<div class="field"><label>' + t('card_limit_label') + '</label><input type="number" step="0.01" id="card-limit" placeholder="0.00"></div>' +
+      '</div>' +
+      '<div id="card-err" class="err"></div>' +
+      '<button type="submit" class="btn-primary btn-block">' + t('add_card_btn') + '</button>' +
+      '</form>'
+    );
+
+    var tiles;
+    if (state.creditCards.length === 0) {
+      tiles = '<div class="card"><p class="empty">' + t('cards_empty') + '</p></div>';
+    } else {
+      tiles = '<div class="cards-grid">' + state.creditCards.map(function (c) {
+        var balance = computeCardBalance(c.id);
+        var pct = c.limit > 0 ? Math.max(0, Math.min(100, Math.round((balance / c.limit) * 100))) : 0;
+        var levelCls = usageLevelClass(pct);
+        var available = c.limit - balance;
+
+        if (editingCardId === c.id) {
+          return (
+            '<div class="card card-tile">' +
+            '<div class="card-edit-fields">' +
+            '<input id="edit-card-name" value="' + escapeAttr(c.name) + '">' +
+            '<input id="edit-card-limit" type="number" step="0.01" value="' + c.limit + '">' +
+            '</div>' +
+            '<div id="card-edit-err" class="err" style="margin-bottom:10px;"></div>' +
+            '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-card-edit" data-id="' + c.id + '">' + t('save') + '</button>' +
+            '<button class="btn-ghost" data-action="cancel-card-edit">' + t('cancel') + '</button></div>' +
+            '</div>'
+          );
+        }
+
+        return (
+          '<div class="card card-tile">' +
+          '<div class="top-row"><div><div class="name">' + escapeHtml(c.name) + '</div>' +
+          '<div class="limit">' + t('card_limit_label') + ': <span class="mono">' + formatCurrency(c.limit) + '</span></div></div>' +
+          '<div><button class="icon-btn" data-action="edit-card" data-id="' + c.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-card" data-id="' + c.id + '" data-name="' + escapeAttr(c.name) + '" title="delete">🗑️</button></div></div>' +
+          '<div class="usage-line"><span>' + t('card_used') + '</span><span class="used mono">' + formatCurrency(balance) + ' (' + pct + '%)</span></div>' +
+          '<div class="usage-track"><div class="usage-fill ' + levelCls + '" style="width:' + pct + '%"></div></div>' +
+          '<div class="available">' + t('card_available') + ': <span class="mono">' + formatCurrency(available) + '</span></div>' +
+          '<button class="btn-ghost btn-block" data-action="open-card" data-id="' + c.id + '">' + t('card_view_btn') + '</button>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    return (
+      '<h2 class="section-title">' + t('cards_title') + '</h2>' +
+      '<p class="section-desc">' + t('cards_desc') + '</p>' +
+      addForm + tiles
+    );
+  }
+
+  function renderCardDetail(card) {
+    var balance = computeCardBalance(card.id);
+    var pct = card.limit > 0 ? Math.max(0, Math.min(100, Math.round((balance / card.limit) * 100))) : 0;
+    var levelCls = usageLevelClass(pct);
+    var available = card.limit - balance;
+
+    var header = (
+      '<button class="card-back-btn" data-action="back-to-cards">' + (state.lang === 'ar' ? '→' : '←') + ' ' + t('back_to_cards') + '</button>' +
+      '<div class="card-detail-header"><div><h2>' + escapeHtml(card.name) + '</h2>' +
+      '<div class="sub">' + t('card_limit_label') + ': ' + formatCurrency(card.limit) + '</div></div></div>' +
+      '<div class="grid-3">' +
+      '<div class="card stat-tile"><div class="k">' + t('card_used') + '</div><div class="v">' + formatCurrency(balance) + '</div>' +
+      '<div class="usage-track" style="margin-top:10px;margin-bottom:0;"><div class="usage-fill ' + levelCls + '" style="width:' + pct + '%"></div></div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('card_available') + '</div><div class="v positive">' + formatCurrency(available) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('card_limit_label') + '</div><div class="v">' + formatCurrency(card.limit) + '</div></div>' +
+      '</div>'
+    );
+
+    return header + '<div class="tx-layout">' + renderCardTxForm(card) + renderCardTxList(card) + '</div>';
+  }
+
+  function renderCardTxForm(card) {
+    var editingTx = editingCardTxId ? state.cardTransactions.find(function (tx) { return tx.id === editingCardTxId; }) : null;
+    var type = editingTx ? editingTx.type : cardTxFormType;
+    var date = editingTx ? editingTx.date : todayStr();
+    var amount = editingTx ? editingTx.amount : '';
+    var note = editingTx ? (editingTx.note || '') : '';
+    var submitBtnCls = type === 'purchase' ? 'expense-btn' : 'income-btn';
+
+    return (
+      '<form id="card-tx-form" class="card" data-card-id="' + card.id + '">' +
+      '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingTx ? t('card_tx_form_title_edit') : t('card_tx_form_title_new')) + '</h3>' +
+      '<div class="type-toggle">' +
+      '<button type="button" data-action="set-card-tx-type" data-type="purchase" class="type-btn' + (type === 'purchase' ? ' active-expense' : '') + '">' + t('type_purchase') + '</button>' +
+      '<button type="button" data-action="set-card-tx-type" data-type="payment" class="type-btn' + (type === 'payment' ? ' active-income' : '') + '">' + t('type_payment') + '</button>' +
+      '</div>' +
+      '<input type="hidden" id="card-tx-type" value="' + type + '">' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="card-tx-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="card-tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="card-tx-note" value="' + escapeAttr(note) + '"></div>' +
+      '<div id="card-tx-err" class="err"></div>' +
+      '<div class="btn-row">' +
+      '<button type="submit" class="btn-primary ' + submitBtnCls + '">' + (editingTx ? t('btn_save_edit') : t('btn_add_tx')) + '</button>' +
+      (editingTx ? '<button type="button" class="btn-ghost" data-action="cancel-edit-card-tx">' + t('cancel') + '</button>' : '') +
+      '</div>' +
+      '</form>'
+    );
+  }
+
+  function renderCardTxList(card) {
+    var txs = state.cardTransactions
+      .filter(function (tx) { return tx.cardId === card.id; })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+
+    var body;
+    if (txs.length === 0) {
+      body = '<div class="list-empty">' + t('card_tx_empty') + '</div>';
+    } else {
+      var rows = txs.map(function (tx) {
+        var sign = tx.type === 'purchase' ? '+' : '-';
+        var cls = tx.type === 'purchase' ? 'expense' : 'income';
+        var typeLabel = tx.type === 'purchase' ? t('type_purchase') : t('type_payment');
+        return (
+          '<tr>' +
+          '<td>' + tx.date + '</td>' +
+          '<td>' + typeLabel + '</td>' +
+          '<td>' + (tx.note ? escapeHtml(tx.note) : '—') + '</td>' +
+          '<td class="amt mono ' + cls + '">' + sign + formatCurrency(tx.amount) + '</td>' +
+          '<td class="actions">' +
+          '<button class="icon-btn" data-action="edit-card-tx" data-id="' + tx.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-card-tx" data-id="' + tx.id + '" title="delete">🗑️</button>' +
+          '</td></tr>'
+        );
+      }).join('');
+      body = (
+        '<div class="table-scroll"><table><thead><tr>' +
+        '<th>' + t('th_date') + '</th><th>' + t('th_type') + '</th><th>' + t('th_note') + '</th><th class="amt">' + t('th_amount') + '</th><th></th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+      );
+    }
+
+    return (
+      '<div class="card list-card">' +
+      '<div class="head">' + t('card_tx_list_title') + ' (' + txs.length + ')</div>' +
+      body +
+      '</div>'
     );
   }
 
@@ -597,11 +1177,27 @@
       var dateEl = document.getElementById('setup-date');
       var value = parseFloat(amountEl.value);
       if (amountEl.value.trim() === '' || isNaN(value)) {
-        document.getElementById('setup-err').textContent = 'الرجاء إدخال رصيد صحيح';
+        document.getElementById('setup-err').textContent = t('err_invalid_balance');
         return;
       }
       state.openingBalance = value;
       state.openingBalanceDate = dateEl.value || todayStr();
+      saveState();
+      render();
+      return;
+    }
+
+    if (form.id === 'opening-edit-form') {
+      e.preventDefault();
+      var oAmount = parseFloat(document.getElementById('opening-edit-amount').value);
+      var oDate = document.getElementById('opening-edit-date').value;
+      if (isNaN(oAmount)) {
+        document.getElementById('opening-edit-err').textContent = t('err_invalid_balance');
+        return;
+      }
+      state.openingBalance = oAmount;
+      state.openingBalanceDate = oDate || state.openingBalanceDate;
+      editingOpeningBalance = false;
       saveState();
       render();
       return;
@@ -616,14 +1212,14 @@
       var note = document.getElementById('tx-note').value.trim();
       var errEl = document.getElementById('tx-err');
 
-      if (!categoryId) { errEl.textContent = 'اختر البند'; return; }
-      if (isNaN(amount) || amount <= 0) { errEl.textContent = 'أدخل مبلغًا صحيحًا أكبر من صفر'; return; }
+      if (!categoryId) { errEl.textContent = t('err_select_category'); return; }
+      if (isNaN(amount) || amount <= 0) { errEl.textContent = t('err_amount'); return; }
 
       var payload = { date: date, categoryId: categoryId, type: type, amount: amount, note: note || undefined };
 
       if (editingTransactionId) {
-        state.transactions = state.transactions.map(function (t) {
-          return t.id === editingTransactionId ? Object.assign({ id: t.id }, payload) : t;
+        state.transactions = state.transactions.map(function (tx) {
+          return tx.id === editingTransactionId ? Object.assign({ id: tx.id }, payload) : tx;
         });
         editingTransactionId = null;
       } else {
@@ -647,6 +1243,47 @@
       render();
       return;
     }
+
+    if (form.id === 'card-form') {
+      e.preventDefault();
+      var cardName = document.getElementById('card-name').value.trim();
+      var cardLimit = parseFloat(document.getElementById('card-limit').value);
+      var cardErrEl = document.getElementById('card-err');
+      if (!cardName) { cardErrEl.textContent = t('err_card_name'); return; }
+      if (isNaN(cardLimit) || cardLimit <= 0) { cardErrEl.textContent = t('err_card_limit'); return; }
+      state.creditCards.push({ id: uid(), name: cardName, limit: cardLimit });
+      saveState();
+      render();
+      return;
+    }
+
+    if (form.id === 'card-tx-form') {
+      e.preventDefault();
+      var cType = document.getElementById('card-tx-type').value;
+      var cDate = document.getElementById('card-tx-date').value;
+      var cAmount = parseFloat(document.getElementById('card-tx-amount').value);
+      var cNote = document.getElementById('card-tx-note').value.trim();
+      var cErrEl = document.getElementById('card-tx-err');
+
+      if (isNaN(cAmount) || cAmount <= 0) { cErrEl.textContent = t('err_amount'); return; }
+
+      var cardId = form.dataset.cardId;
+      var cPayload = { cardId: cardId, date: cDate, type: cType, amount: cAmount, note: cNote || undefined };
+
+      if (editingCardTxId) {
+        state.cardTransactions = state.cardTransactions.map(function (tx) {
+          return tx.id === editingCardTxId ? Object.assign({ id: tx.id }, cPayload) : tx;
+        });
+        editingCardTxId = null;
+      } else {
+        cPayload.id = uid();
+        state.cardTransactions.push(cPayload);
+      }
+      cardTxFormType = 'purchase';
+      saveState();
+      render();
+      return;
+    }
   });
 
   app.addEventListener('click', function (e) {
@@ -658,11 +1295,21 @@
       currentTab = btn.dataset.tab;
       editingTransactionId = null;
       editingCategoryId = null;
+      editingOpeningBalance = false;
+      selectedCardId = null;
+      editingCardId = null;
+      editingCardTxId = null;
       render();
       return;
     }
     if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); render(); return; }
     if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); render(); return; }
+
+    if (action === 'toggle-theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; saveState(); render(); return; }
+    if (action === 'toggle-lang') { state.lang = state.lang === 'ar' ? 'en' : 'ar'; saveState(); render(); return; }
+
+    if (action === 'edit-opening') { editingOpeningBalance = true; render(); return; }
+    if (action === 'cancel-edit-opening') { editingOpeningBalance = false; render(); return; }
 
     if (action === 'set-tx-type') {
       var newType = btn.dataset.type;
@@ -671,7 +1318,6 @@
       var noteVal = document.getElementById('tx-note').value;
       txFormType = newType;
       if (!editingTransactionId) {
-        // rebuild just the form, preserving already-typed values
         var formEl = document.getElementById('transaction-form');
         formEl.outerHTML = renderTransactionForm();
         document.getElementById('tx-amount').value = amountVal;
@@ -683,8 +1329,8 @@
     if (action === 'cancel-edit-tx') { editingTransactionId = null; render(); return; }
     if (action === 'edit-tx') { editingTransactionId = btn.dataset.id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (action === 'delete-tx') {
-      if (confirm('هل تريد حذف هذه العملية؟')) {
-        state.transactions = state.transactions.filter(function (t) { return t.id !== btn.dataset.id; });
+      if (confirm(t('confirm_delete_tx'))) {
+        state.transactions = state.transactions.filter(function (tx) { return tx.id !== btn.dataset.id; });
         saveState();
         render();
       }
@@ -704,10 +1350,71 @@
       return;
     }
     if (action === 'delete-cat') {
-      if (confirm('هل تريد حذف "' + btn.dataset.name + '"؟ سيتم حذف كل العمليات المرتبطة به.')) {
+      var catMsg = state.lang === 'ar'
+        ? ('هل تريد حذف "' + btn.dataset.name + '"؟ سيتم حذف كل العمليات المرتبطة به.')
+        : ('Delete "' + btn.dataset.name + '"? All related transactions will be deleted too.');
+      if (confirm(catMsg)) {
         var id = btn.dataset.id;
         state.categories = state.categories.filter(function (c) { return c.id !== id; });
-        state.transactions = state.transactions.filter(function (t) { return t.categoryId !== id; });
+        state.transactions = state.transactions.filter(function (tx) { return tx.categoryId !== id; });
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    // ----- Credit cards -----
+    if (action === 'open-card') { selectedCardId = btn.dataset.id; editingCardTxId = null; render(); return; }
+    if (action === 'back-to-cards') { selectedCardId = null; render(); return; }
+    if (action === 'edit-card') { editingCardId = btn.dataset.id; render(); return; }
+    if (action === 'cancel-card-edit') { editingCardId = null; render(); return; }
+    if (action === 'save-card-edit') {
+      var cName = document.getElementById('edit-card-name').value.trim();
+      var cLimit = parseFloat(document.getElementById('edit-card-limit').value);
+      var editErrEl = document.getElementById('card-edit-err');
+      if (!cName) { editErrEl.textContent = t('err_card_name'); return; }
+      if (isNaN(cLimit) || cLimit <= 0) { editErrEl.textContent = t('err_card_limit'); return; }
+      state.creditCards = state.creditCards.map(function (c) { return c.id === btn.dataset.id ? Object.assign({}, c, { name: cName, limit: cLimit }) : c; });
+      editingCardId = null;
+      saveState();
+      render();
+      return;
+    }
+    if (action === 'delete-card') {
+      var msg = state.lang === 'ar'
+        ? ('هل تريد حذف بطاقة "' + btn.dataset.name + '"؟ سيتم حذف كل عملياتها.')
+        : ('Delete card "' + btn.dataset.name + '"? All its transactions will be deleted too.');
+      if (confirm(msg)) {
+        var delId = btn.dataset.id;
+        state.creditCards = state.creditCards.filter(function (c) { return c.id !== delId; });
+        state.cardTransactions = state.cardTransactions.filter(function (tx) { return tx.cardId !== delId; });
+        if (selectedCardId === delId) selectedCardId = null;
+        saveState();
+        render();
+      }
+      return;
+    }
+    if (action === 'set-card-tx-type') {
+      var newCType = btn.dataset.type;
+      var cAmountVal = document.getElementById('card-tx-amount').value;
+      var cDateVal = document.getElementById('card-tx-date').value;
+      var cNoteVal = document.getElementById('card-tx-note').value;
+      cardTxFormType = newCType;
+      if (!editingCardTxId) {
+        var cFormEl = document.getElementById('card-tx-form');
+        var card = state.creditCards.find(function (c) { return c.id === selectedCardId; });
+        cFormEl.outerHTML = renderCardTxForm(card);
+        document.getElementById('card-tx-amount').value = cAmountVal;
+        document.getElementById('card-tx-date').value = cDateVal;
+        document.getElementById('card-tx-note').value = cNoteVal;
+      }
+      return;
+    }
+    if (action === 'cancel-edit-card-tx') { editingCardTxId = null; render(); return; }
+    if (action === 'edit-card-tx') { editingCardTxId = btn.dataset.id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (action === 'delete-card-tx') {
+      if (confirm(t('confirm_delete_tx'))) {
+        state.cardTransactions = state.cardTransactions.filter(function (tx) { return tx.id !== btn.dataset.id; });
         saveState();
         render();
       }
