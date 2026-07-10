@@ -162,11 +162,11 @@
   .stat-tile .v{ font-size:20px; font-weight:700; }
   .v.positive{ color:var(--success); }
   .v.negative{ color:var(--danger); }
-  .stat-tile .edit-link{
+  .edit-link{
     display:inline-block; margin-top:8px; font-size:11.5px; color:var(--slate-soft);
-    background:none; border:none; cursor:pointer; font-family:inherit; padding:0; text-decoration:underline;
+    appearance:none; background:none; border:none; cursor:pointer; font-family:inherit; padding:0; text-decoration:underline;
   }
-  .stat-tile .edit-link:hover{ color:var(--success); }
+  .edit-link:hover{ color:var(--success); }
 
   .breakdown h3{ font-size:15px; font-weight:700; margin:0 0 14px; }
   .breakdown .empty{ font-size:13px; color:var(--slate-soft); }
@@ -540,6 +540,7 @@
       gate_amount_label: 'الرصيد النقدي الافتتاحي',
       gate_date_label: 'تاريخ الرصيد الافتتاحي',
       gate_submit: 'بدء المتابعة',
+      gate_restore_link: 'استعادة نسخة احتياطية سابقة',
       err_invalid_balance: 'الرجاء إدخال رصيد صحيح',
       stat_opening: 'الرصيد الافتتاحي',
       stat_income: 'إجمالي المداخيل',
@@ -691,7 +692,15 @@
       bank_reconcile_note: 'يقارن الرصيد الختامي للشهر الحالي (حتى اليوم) بما تُدخله من رصيدك البنكي الفعلي.',
 
       export_transactions_btn: 'تصدير العمليات (Excel)',
-      export_report_btn: 'تصدير التقرير (Excel)'
+      export_report_btn: 'تصدير التقرير (Excel)',
+
+      backup_title: 'نسخ احتياطي واستعادة البيانات',
+      backup_desc: 'بياناتك محفوظة في هذا المتصفح فقط. احفظ نسخة احتياطية بشكل دوري لحمايتها من الفقدان، خصوصًا إذا كنت تستخدم التطبيق من جوالك فقط.',
+      export_backup_btn: 'تصدير نسخة احتياطية',
+      import_backup_btn: 'استيراد نسخة احتياطية',
+      confirm_import_backup: 'سيتم استبدال جميع بياناتك الحالية بالنسخة المستوردة. هل تريد المتابعة؟',
+      import_success: 'تم استيراد النسخة الاحتياطية بنجاح',
+      import_error: 'ملف النسخة الاحتياطية غير صالح'
     },
     en: {
       brand_title: 'Monthly Cash Flow Tracker',
@@ -708,6 +717,7 @@
       gate_amount_label: 'Opening Cash Balance',
       gate_date_label: 'Opening Balance Date',
       gate_submit: 'Get Started',
+      gate_restore_link: 'Restore a previous backup',
       err_invalid_balance: 'Please enter a valid balance',
       stat_opening: 'Opening Balance',
       stat_income: 'Total Income',
@@ -859,7 +869,15 @@
       bank_reconcile_note: "Compares this month's closing balance (as of today) with the actual bank balance you enter.",
 
       export_transactions_btn: 'Export Transactions (Excel)',
-      export_report_btn: 'Export Report (Excel)'
+      export_report_btn: 'Export Report (Excel)',
+
+      backup_title: 'Data Backup & Restore',
+      backup_desc: 'Your data is only saved in this browser. Export a backup regularly to protect it from loss, especially if you use the app on your phone only.',
+      export_backup_btn: 'Export Backup',
+      import_backup_btn: 'Import Backup',
+      confirm_import_backup: 'This will replace all your current data with the imported backup. Continue?',
+      import_success: 'Backup imported successfully',
+      import_error: 'Invalid backup file'
     }
   };
 
@@ -1083,6 +1101,22 @@
     URL.revokeObjectURL(url);
   }
 
+  function exportBackupJson() {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'thamer-cashflow-backup-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function isValidBackup(data) {
+    return data && typeof data === 'object' && Array.isArray(data.categories) && Array.isArray(data.transactions);
+  }
+
   // ---------------- App state ----------------
   var state = loadState();
   var currentTab = 'summary';
@@ -1127,7 +1161,10 @@
       '<input type="date" id="setup-date" value="' + todayStr() + '"></div>' +
       '<div id="setup-err" class="err"></div>' +
       '<button type="submit" class="btn-primary">' + t('gate_submit') + '</button>' +
-      '</form></div></div>'
+      '</form>' +
+      '<button type="button" class="edit-link" style="display:block;margin:14px auto 0;" data-action="import-backup">⬆️ ' + t('gate_restore_link') + '</button>' +
+      '<input type="file" id="backup-file-input" accept="application/json" style="display:none;">' +
+      '</div></div>'
     );
   }
 
@@ -1913,6 +1950,18 @@
       }).join('');
     }
 
+    var backupCard = (
+      '<div class="card" style="margin-top:16px;">' +
+      '<h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('backup_title') + '</h3>' +
+      '<p style="font-size:12.5px;color:var(--slate);margin:0 0 16px;line-height:1.6;">' + t('backup_desc') + '</p>' +
+      '<div class="btn-row">' +
+      '<button type="button" class="btn-ghost" style="flex:1;" data-action="export-backup">⬇️ ' + t('export_backup_btn') + '</button>' +
+      '<button type="button" class="btn-ghost" style="flex:1;" data-action="import-backup">⬆️ ' + t('import_backup_btn') + '</button>' +
+      '</div>' +
+      '<input type="file" id="backup-file-input" accept="application/json" style="display:none;">' +
+      '</div>'
+    );
+
     return (
       '<h2 class="section-title">' + t('notif_title') + '</h2>' +
       '<p class="section-desc">' + t('notif_desc') + '</p>' +
@@ -1921,7 +1970,8 @@
       '<div class="settings-list">' + settingsHtml + '</div></div>' +
       '<div class="card"><h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + t('notif_active_title') + '</h3>' +
       alertsHtml + '</div>' +
-      '</div>'
+      '</div>' +
+      backupCard
     );
   }
 
@@ -2135,6 +2185,49 @@
       render();
       return;
     }
+    if (el.id === 'backup-file-input') {
+      var file = el.files && el.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var parsed;
+        try {
+          parsed = JSON.parse(reader.result);
+        } catch (err) {
+          alert(t('import_error'));
+          return;
+        }
+        if (!isValidBackup(parsed)) {
+          alert(t('import_error'));
+          return;
+        }
+        if (!confirm(t('confirm_import_backup'))) return;
+        var d = defaultState();
+        state = {
+          openingBalance: parsed.openingBalance != null ? parsed.openingBalance : null,
+          openingBalanceDate: parsed.openingBalanceDate || null,
+          categories: parsed.categories || d.categories,
+          transactions: parsed.transactions || [],
+          creditCards: parsed.creditCards || [],
+          cardTransactions: parsed.cardTransactions || [],
+          loans: parsed.loans || [],
+          loanPayments: parsed.loanPayments || [],
+          subscriptions: parsed.subscriptions || [],
+          budgets: parsed.budgets || {},
+          bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
+          bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
+          notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
+          theme: parsed.theme || state.theme,
+          lang: parsed.lang || state.lang
+        };
+        saveState();
+        alert(t('import_success'));
+        render();
+      };
+      reader.readAsText(file);
+      el.value = '';
+      return;
+    }
   });
 
   app.addEventListener('click', function (e) {
@@ -2303,6 +2396,8 @@
       exportCsv('monthly-report.csv', rowsR);
       return;
     }
+    if (action === 'export-backup') { exportBackupJson(); return; }
+    if (action === 'import-backup') { document.getElementById('backup-file-input').click(); return; }
 
     // ----- Loans -----
     if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; render(); return; }
