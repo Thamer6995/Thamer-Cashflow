@@ -342,6 +342,88 @@
   .card-detail-header{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
   .card-detail-header h2{ font-size:17px; font-weight:700; margin:0 0 4px; }
   .card-detail-header .sub{ font-size:12.5px; color:var(--slate); }
+
+  /* ---------- Budget ---------- */
+  .budget-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .budget-row:last-child{ border-bottom:none; }
+  .budget-row .name{ flex:0 0 140px; font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .budget-row .input-cell{ flex:0 0 130px; }
+  .budget-row .input-cell input{
+    width:100%; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
+  }
+  .budget-row .vs{ flex:1; min-width:140px; }
+  .budget-row .vs .nums{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--slate); margin-bottom:5px; }
+  .budget-row .vs .nums .over{ color:var(--danger); font-weight:700; }
+  .budget-row .vs .nums .under{ color:var(--success); font-weight:700; }
+  @media (max-width:640px){
+    .budget-row{ flex-wrap:wrap; }
+    .budget-row .name{ flex:1 1 100%; }
+    .budget-row .input-cell{ flex:1 1 140px; }
+    .budget-row .vs{ flex:1 1 100%; }
+  }
+
+  /* ---------- Calendar ---------- */
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:6px; }
+  .cal-weekday{ text-align:center; font-size:11px; font-weight:700; color:var(--slate-soft); padding-bottom:4px; }
+  .cal-day{
+    border-radius:9px; border:1px solid var(--line); background:var(--card-alt);
+    min-height:56px; padding:6px; display:flex; flex-direction:column; gap:2px;
+  }
+  .cal-day.empty{ border:none; background:transparent; }
+  .cal-day.today{ border-color:var(--success); }
+  .cal-day .num{ font-size:11px; color:var(--slate); }
+  .cal-day .net{ font-size:11px; font-weight:700; font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; }
+  .cal-day .net.positive{ color:var(--success); }
+  .cal-day .net.negative{ color:var(--danger); }
+  @media (max-width:640px){ .cal-day{ min-height:42px; padding:4px; } .cal-day .net{ font-size:9.5px; } .cal-weekday{ font-size:9.5px; } }
+
+  /* ---------- Notifications ---------- */
+  .settings-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
+  .settings-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .settings-item:last-child{ border-bottom:none; }
+  .settings-item .label{ font-size:13.5px; color:var(--ink-soft); }
+  .switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
+  .switch input{ position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; }
+  .switch .track{
+    position:absolute; inset:0; background:var(--line); border-radius:14px; cursor:pointer; transition:background .15s ease;
+  }
+  .switch .track::before{
+    content:""; position:absolute; height:18px; width:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform .15s ease;
+  }
+  .switch input:checked + .track{ background:var(--success); }
+  html[dir="rtl"] .switch input:checked + .track::before{ transform:translateX(-18px); }
+  html[dir="ltr"] .switch input:checked + .track::before{ transform:translateX(18px); }
+
+  .alert-item{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:11px; margin-bottom:10px; border:1px solid var(--line); background:var(--card-alt); }
+  .alert-item:last-child{ margin-bottom:0; }
+  .alert-item.danger{ border-color:var(--danger); background:var(--danger-soft); }
+  .alert-item.warning{ border-color:var(--warning); background:rgba(251,191,36,.12); }
+  .alert-item .icon{ font-size:16px; line-height:1.4; }
+  .alert-item .body .title{ font-size:13px; font-weight:700; margin-bottom:2px; }
+  .alert-item .body .msg{ font-size:12.5px; color:var(--slate); line-height:1.5; }
+
+  /* ---------- Loans / Subscriptions shared ---------- */
+  .progress-track{ height:8px; border-radius:6px; background:var(--card-alt); overflow:hidden; margin:8px 0 4px; }
+  .progress-fill{ height:100%; border-radius:6px; background:var(--success); }
+  .sub-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .sub-row:last-child{ border-bottom:none; }
+  .sub-row .info .name{ font-size:13.5px; font-weight:700; color:var(--ink); }
+  .sub-row .info .meta{ font-size:12px; color:var(--slate); margin-top:2px; }
+  .sub-row .info .meta.paused{ text-decoration:line-through; }
+  .sub-row .amt{ font-weight:700; }
+  .sub-row .actions-row{ display:flex; align-items:center; gap:6px; }
+  .pill{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .pill.active{ background:var(--success-soft); color:var(--success); }
+  .pill.paused{ background:var(--line); color:var(--slate); }
+
+  .export-btn{
+    appearance:none; border:1.5px solid var(--line); background:var(--card-alt); color:var(--ink-soft);
+    font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:9px; cursor:pointer;
+  }
+  .export-btn:hover{ border-color:var(--success); color:var(--ink); }
+  .head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line); }
+  .head-row .head{ padding:0; border:none; }
 </style>
 </head>
 <body>
@@ -368,6 +450,13 @@
       transactions: [],
       creditCards: [],
       cardTransactions: [],
+      loans: [],
+      loanPayments: [],
+      subscriptions: [],
+      budgets: {},
+      bankBalance: null,
+      bankBalanceUpdatedAt: null,
+      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true },
       theme: 'dark',
       lang: 'ar'
     };
@@ -386,6 +475,13 @@
         transactions: parsed.transactions || [],
         creditCards: parsed.creditCards || [],
         cardTransactions: parsed.cardTransactions || [],
+        loans: parsed.loans || [],
+        loanPayments: parsed.loanPayments || [],
+        subscriptions: parsed.subscriptions || [],
+        budgets: parsed.budgets || {},
+        bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
+        bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
+        notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
         theme: parsed.theme || 'dark',
         lang: parsed.lang || 'ar'
       };
@@ -513,7 +609,89 @@
       err_card_name: 'أدخل اسم البطاقة',
       err_card_limit: 'أدخل حدًا ائتمانيًا صحيحًا أكبر من صفر',
       th_type: 'النوع',
-      currency_suffix: 'ر.س'
+      currency_suffix: 'ر.س',
+
+      tab_budget: 'الميزانية',
+      tab_loans: 'القروض',
+      tab_subscriptions: 'الاشتراكات',
+      tab_notifications: 'الإشعارات',
+
+      budget_title: 'الميزانية الشهرية',
+      budget_desc: 'حدّد ميزانية شهرية لكل بند لمقارنتها بالتدفقات الفعلية لهذا الشهر.',
+      th_budget: 'الميزانية',
+      th_actual: 'الفعلي',
+      no_budget_set: 'لم تُحدَّد',
+      over_budget: 'تجاوز',
+      under_budget: 'ضمن الحد',
+      calendar_title: 'تقويم التدفقات النقدية',
+      calendar_desc: 'صافي التدفقات النقدية يوميًا لهذا الشهر، إلى جانب الميزانية أعلاه.',
+      weekdays: ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'],
+
+      loans_title: 'متابعة القروض الشخصية',
+      loans_desc: 'أضِف قروضك وأقساطها الشهرية، وسجّل الدفعات لمتابعة المتبقي من كل قرض.',
+      loan_name_label: 'اسم القرض',
+      loan_name_placeholder: 'مثال: قرض شخصي',
+      loan_principal_label: 'مبلغ القرض',
+      loan_installment_label: 'القسط الشهري',
+      loan_term_label: 'مدة القرض (بالأشهر)',
+      add_loan_btn: 'إضافة قرض',
+      loan_paid: 'المسدد',
+      loan_remaining: 'المتبقي',
+      loan_view_btn: 'عرض الدفعات',
+      loans_empty: 'لا توجد قروض مضافة بعد',
+      back_to_loans: 'رجوع للقروض',
+      loan_payment_form_title_new: 'تسجيل دفعة',
+      loan_payment_form_title_edit: 'تعديل الدفعة',
+      loan_payments_list_title: 'الدفعات',
+      loan_payments_empty: 'لا توجد دفعات مسجلة بعد',
+      loan_est_remaining_months: 'الأشهر المتبقية تقريبًا',
+      err_loan_name: 'أدخل اسم القرض',
+      err_loan_principal: 'أدخل مبلغ قرض صحيح أكبر من صفر',
+      err_loan_installment: 'أدخل قسطًا شهريًا صحيحًا أكبر من صفر',
+      err_loan_term: 'أدخل مدة صحيحة بالأشهر',
+      btn_log_payment: 'تسجيل الدفعة',
+
+      subs_title: 'الاشتراكات الشهرية',
+      subs_desc: 'تابع اشتراكاتك الشهرية المتكررة وإجمالي تكلفتها الشهرية.',
+      sub_name_label: 'اسم الاشتراك',
+      sub_name_placeholder: 'مثال: نتفليكس',
+      sub_amount_label: 'المبلغ الشهري',
+      sub_day_label: 'يوم الاستحقاق من الشهر',
+      add_sub_btn: 'إضافة اشتراك',
+      subs_empty: 'لا توجد اشتراكات مضافة بعد',
+      subs_total: 'إجمالي الاشتراكات الشهرية النشطة',
+      status_active: 'نشط',
+      status_paused: 'موقّف',
+      day_of_month_short: 'يوم',
+      err_sub_name: 'أدخل اسم الاشتراك',
+      err_sub_amount: 'أدخل مبلغًا صحيحًا أكبر من صفر',
+      err_sub_day: 'أدخل يومًا صحيحًا بين 1 و31',
+
+      notif_title: 'إدارة الإشعارات',
+      notif_desc: 'فعّل أو أوقف أنواع التنبيهات، وتابع التنبيهات النشطة حاليًا بناءً على بياناتك.',
+      notif_settings_title: 'أنواع التنبيهات',
+      notif_type_cardLimit: 'اقتراب بطاقة ائتمانية من حدها',
+      notif_type_subscriptionsDue: 'اقتراب استحقاق اشتراك',
+      notif_type_budgetOverage: 'تجاوز الميزانية الشهرية',
+      notif_type_bankMismatch: 'وجود فرق في مطابقة الرصيد البنكي',
+      notif_active_title: 'التنبيهات الحالية',
+      notif_empty: 'لا توجد تنبيهات حاليًا',
+      notif_msg_card: 'استخدمت {pct}% من حد البطاقة ({used} من {limit})',
+      notif_msg_sub_today: 'اشتراك "{name}" يستحق اليوم ({amount})',
+      notif_msg_sub_days: 'اشتراك "{name}" يستحق خلال {days} يوم ({amount})',
+      notif_msg_budget_over: 'تجاوزت ميزانية "{name}" بمقدار {amount}',
+      notif_msg_income_under: 'دخل "{name}" أقل من الميزانية بمقدار {amount}',
+      notif_msg_bank: 'الفرق بين الرصيد البنكي ورصيد التطبيق: {amount}',
+
+      stat_bank_balance: 'الرصيد البنكي الفعلي',
+      edit_bank_balance_link: 'تعديل الرصيد البنكي',
+      add_bank_balance_link: 'إضافة الرصيد البنكي',
+      stat_variance: 'الفرق (بنك - تطبيق)',
+      bank_not_set: 'لم يُدخل بعد',
+      bank_reconcile_note: 'يقارن الرصيد الختامي للشهر الحالي (حتى اليوم) بما تُدخله من رصيدك البنكي الفعلي.',
+
+      export_transactions_btn: 'تصدير العمليات (Excel)',
+      export_report_btn: 'تصدير التقرير (Excel)'
     },
     en: {
       brand_title: 'Monthly Cash Flow Tracker',
@@ -599,11 +777,98 @@
       err_card_name: 'Enter the card name',
       err_card_limit: 'Enter a valid credit limit greater than zero',
       th_type: 'Type',
-      currency_suffix: 'SAR'
+      currency_suffix: 'SAR',
+
+      tab_budget: 'Budget',
+      tab_loans: 'Loans',
+      tab_subscriptions: 'Subscriptions',
+      tab_notifications: 'Notifications',
+
+      budget_title: 'Monthly Budget',
+      budget_desc: "Set a monthly budget for each item to compare it with this month's actual cash flow.",
+      th_budget: 'Budget',
+      th_actual: 'Actual',
+      no_budget_set: 'Not set',
+      over_budget: 'Over',
+      under_budget: 'Within budget',
+      calendar_title: 'Cash Flow Calendar',
+      calendar_desc: 'Daily net cash flow for this month, alongside the budget above.',
+      weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+
+      loans_title: 'Personal Loans',
+      loans_desc: 'Add your loans and their monthly installments, and log payments to track what remains on each.',
+      loan_name_label: 'Loan Name',
+      loan_name_placeholder: 'e.g. Personal Loan',
+      loan_principal_label: 'Loan Amount',
+      loan_installment_label: 'Monthly Installment',
+      loan_term_label: 'Loan Term (months)',
+      add_loan_btn: 'Add Loan',
+      loan_paid: 'Paid',
+      loan_remaining: 'Remaining',
+      loan_view_btn: 'View Payments',
+      loans_empty: 'No loans added yet',
+      back_to_loans: 'Back to Loans',
+      loan_payment_form_title_new: 'Log Payment',
+      loan_payment_form_title_edit: 'Edit Payment',
+      loan_payments_list_title: 'Payments',
+      loan_payments_empty: 'No payments logged yet',
+      loan_est_remaining_months: 'Est. months remaining',
+      err_loan_name: 'Enter the loan name',
+      err_loan_principal: 'Enter a valid loan amount greater than zero',
+      err_loan_installment: 'Enter a valid monthly installment greater than zero',
+      err_loan_term: 'Enter a valid term in months',
+      btn_log_payment: 'Log Payment',
+
+      subs_title: 'Monthly Subscriptions',
+      subs_desc: 'Track your recurring monthly subscriptions and their total monthly cost.',
+      sub_name_label: 'Subscription Name',
+      sub_name_placeholder: 'e.g. Netflix',
+      sub_amount_label: 'Monthly Amount',
+      sub_day_label: 'Billing Day of Month',
+      add_sub_btn: 'Add Subscription',
+      subs_empty: 'No subscriptions added yet',
+      subs_total: 'Total Active Monthly Subscriptions',
+      status_active: 'Active',
+      status_paused: 'Paused',
+      day_of_month_short: 'day',
+      err_sub_name: 'Enter the subscription name',
+      err_sub_amount: 'Enter a valid amount greater than zero',
+      err_sub_day: 'Enter a valid day between 1 and 31',
+
+      notif_title: 'Manage Notifications',
+      notif_desc: 'Enable or disable alert types, and review alerts currently triggered by your data.',
+      notif_settings_title: 'Alert Types',
+      notif_type_cardLimit: 'Credit card nearing its limit',
+      notif_type_subscriptionsDue: 'Subscription due soon',
+      notif_type_budgetOverage: 'Monthly budget exceeded',
+      notif_type_bankMismatch: 'Bank balance mismatch',
+      notif_active_title: 'Current Alerts',
+      notif_empty: 'No alerts right now',
+      notif_msg_card: 'You have used {pct}% of the card limit ({used} of {limit})',
+      notif_msg_sub_today: '"{name}" subscription is due today ({amount})',
+      notif_msg_sub_days: '"{name}" subscription is due in {days} day(s) ({amount})',
+      notif_msg_budget_over: '"{name}" budget exceeded by {amount}',
+      notif_msg_income_under: '"{name}" income is below budget by {amount}',
+      notif_msg_bank: 'Difference between bank balance and app balance: {amount}',
+
+      stat_bank_balance: 'Actual Bank Balance',
+      edit_bank_balance_link: 'Edit bank balance',
+      add_bank_balance_link: 'Add bank balance',
+      stat_variance: 'Difference (Bank - App)',
+      bank_not_set: 'Not entered yet',
+      bank_reconcile_note: "Compares this month's closing balance (as of today) with the actual bank balance you enter.",
+
+      export_transactions_btn: 'Export Transactions (Excel)',
+      export_report_btn: 'Export Report (Excel)'
     }
   };
 
   function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || key; }
+  function tf(key, vars) {
+    var s = t(key);
+    Object.keys(vars).forEach(function (k) { s = s.split('{' + k + '}').join(vars[k]); });
+    return s;
+  }
 
   function applyDocumentLangTheme() {
     var html = document.documentElement;
@@ -693,6 +958,131 @@
     return balance;
   }
 
+  function computeLoanPaid(loanId) {
+    var paid = 0;
+    state.loanPayments.forEach(function (p) { if (p.loanId === loanId) paid += p.amount; });
+    return paid;
+  }
+
+  function daysInMonth(monthKey) {
+    var parts = monthKey.split('-').map(Number);
+    return new Date(parts[0], parts[1], 0).getDate();
+  }
+
+  function computeDailyNet(monthKey) {
+    var map = {};
+    state.transactions.forEach(function (tx) {
+      if (monthKeyOf(tx.date) !== monthKey) return;
+      var day = Number(tx.date.slice(8, 10));
+      var signed = tx.type === 'income' ? tx.amount : -tx.amount;
+      map[day] = (map[day] || 0) + signed;
+    });
+    return map;
+  }
+
+  function nextSubscriptionDueDays(sub, fromDate) {
+    var day = Math.min(31, Math.max(1, sub.billingDay));
+    var y = fromDate.getFullYear(), m = fromDate.getMonth();
+    var thisMonthLast = new Date(y, m + 1, 0).getDate();
+    var candidate = new Date(y, m, Math.min(day, thisMonthLast));
+    candidate.setHours(0, 0, 0, 0);
+    var todayMid = new Date(fromDate); todayMid.setHours(0, 0, 0, 0);
+    if (candidate < todayMid) {
+      var nextLast = new Date(y, m + 2, 0).getDate();
+      candidate = new Date(y, m + 1, Math.min(day, nextLast));
+      candidate.setHours(0, 0, 0, 0);
+    }
+    return Math.round((candidate - todayMid) / 86400000);
+  }
+
+  function computeNotifications() {
+    var list = [];
+    var s = state.notificationSettings;
+    var today = new Date();
+
+    if (s.cardLimit) {
+      state.creditCards.forEach(function (c) {
+        var balance = computeCardBalance(c.id);
+        var pct = c.limit > 0 ? Math.round((balance / c.limit) * 100) : 0;
+        if (pct >= 70) {
+          list.push({
+            level: pct >= 90 ? 'danger' : 'warning',
+            title: c.name,
+            message: tf('notif_msg_card', { pct: pct, used: formatCurrency(balance), limit: formatCurrency(c.limit) })
+          });
+        }
+      });
+    }
+
+    if (s.subscriptionsDue) {
+      state.subscriptions.forEach(function (sub) {
+        if (!sub.active) return;
+        var days = nextSubscriptionDueDays(sub, today);
+        if (days <= 5) {
+          list.push({
+            level: days <= 1 ? 'danger' : 'warning',
+            title: sub.name,
+            message: days === 0
+              ? tf('notif_msg_sub_today', { name: sub.name, amount: formatCurrency(sub.amount) })
+              : tf('notif_msg_sub_days', { name: sub.name, days: days, amount: formatCurrency(sub.amount) })
+          });
+        }
+      });
+    }
+
+    if (s.budgetOverage) {
+      var mk = currentMonthKey();
+      var summary = computeMonthSummary(mk);
+      var actualByCategory = {};
+      summary.incomeByCategory.concat(summary.expenseByCategory).forEach(function (it) {
+        actualByCategory[it.category.id] = it.total;
+      });
+      state.categories.forEach(function (c) {
+        var budget = state.budgets[c.id];
+        if (!budget || budget <= 0) return;
+        var actual = actualByCategory[c.id] || 0;
+        if (c.type === 'expense' && actual > budget) {
+          list.push({ level: 'danger', title: c.name, message: tf('notif_msg_budget_over', { name: c.name, amount: formatCurrency(actual - budget) }) });
+        } else if (c.type === 'income' && actual < budget) {
+          list.push({ level: 'warning', title: c.name, message: tf('notif_msg_income_under', { name: c.name, amount: formatCurrency(budget - actual) }) });
+        }
+      });
+    }
+
+    if (s.bankMismatch && state.bankBalance != null) {
+      var appBalance = computeMonthSummary(currentMonthKey()).closingBalance;
+      var diff = state.bankBalance - appBalance;
+      if (Math.abs(diff) > 0.009) {
+        list.push({
+          level: Math.abs(diff) >= 100 ? 'danger' : 'warning',
+          title: t('stat_bank_balance'),
+          message: tf('notif_msg_bank', { amount: (diff > 0 ? '+' : '') + formatCurrency(diff) })
+        });
+      }
+    }
+
+    return list;
+  }
+
+  function csvEscape(val) {
+    var s = val == null ? '' : String(val);
+    if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function exportCsv(filename, rows) {
+    var csv = rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n');
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   // ---------------- App state ----------------
   var state = loadState();
   var currentTab = 'summary';
@@ -706,6 +1096,13 @@
   var editingCardId = null;
   var editingCardTxId = null;
   var cardTxFormType = 'purchase';
+
+  var selectedLoanId = null;
+  var editingLoanId = null;
+  var editingLoanPaymentId = null;
+
+  var editingBankBalance = false;
+  var editingSubId = null;
 
   var app = document.getElementById('app');
 
@@ -738,15 +1135,19 @@
     var tabs = [
       { key: 'summary', label: t('tab_summary') },
       { key: 'transactions', label: t('tab_transactions') },
+      { key: 'budget', label: t('tab_budget') },
       { key: 'reports', label: t('tab_reports') },
       { key: 'cards', label: t('tab_cards') },
+      { key: 'loans', label: t('tab_loans') },
+      { key: 'subscriptions', label: t('tab_subscriptions') },
+      { key: 'notifications', label: t('tab_notifications') },
       { key: 'categories', label: t('tab_categories') }
     ];
     var tabsHtml = tabs.map(function (tb) {
       return '<button class="tab' + (currentTab === tb.key ? ' active' : '') + '" data-action="tab" data-tab="' + tb.key + '">' + tb.label + '</button>';
     }).join('');
 
-    var showMonthNav = currentTab === 'summary' || currentTab === 'transactions';
+    var showMonthNav = currentTab === 'summary' || currentTab === 'transactions' || currentTab === 'budget';
     var monthNavRow = showMonthNav
       ? '<div class="month-nav-row"><div class="month-nav">' +
         '<button data-action="prev-month">' + t('month_prev') + '</button>' +
@@ -773,8 +1174,12 @@
   function renderTabContent() {
     if (currentTab === 'summary') return renderSummary();
     if (currentTab === 'transactions') return renderTransactions();
+    if (currentTab === 'budget') return renderBudget();
     if (currentTab === 'reports') return renderReports();
     if (currentTab === 'cards') return renderCards();
+    if (currentTab === 'loans') return renderLoans();
+    if (currentTab === 'subscriptions') return renderSubscriptions();
+    if (currentTab === 'notifications') return renderNotifications();
     if (currentTab === 'categories') return renderCategories();
     return '';
   }
@@ -824,6 +1229,34 @@
       return '<div class="card breakdown"><h3>' + title + '</h3>' + inner + '</div>';
     }
 
+    var appBalanceNow = computeMonthSummary(currentMonthKey()).closingBalance;
+    var bankTile;
+    if (editingBankBalance) {
+      bankTile = (
+        '<form id="bank-edit-form" class="card stat-tile">' +
+        '<div class="k">' + t('stat_bank_balance') + '</div>' +
+        '<div class="field" style="margin-bottom:8px;"><input type="number" step="0.01" id="bank-edit-amount" value="' + (state.bankBalance != null ? state.bankBalance : '') + '" placeholder="0.00"></div>' +
+        '<div id="bank-edit-err" class="err"></div>' +
+        '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('save') + '</button>' +
+        '<button type="button" class="btn-ghost" data-action="cancel-edit-bank">' + t('cancel') + '</button></div>' +
+        '</form>'
+      );
+    } else if (state.bankBalance == null) {
+      bankTile = (
+        '<div class="card stat-tile"><div class="k">' + t('stat_bank_balance') + '</div><div class="v" style="color:var(--slate-soft);font-size:14px;">' + t('bank_not_set') + '</div>' +
+        '<button class="edit-link" data-action="edit-bank">➕ ' + t('add_bank_balance_link') + '</button></div>'
+      );
+    } else {
+      var diff = state.bankBalance - appBalanceNow;
+      var diffCls = Math.abs(diff) < 0.01 ? '' : (diff > 0 ? 'positive' : 'negative');
+      bankTile = (
+        '<div class="card stat-tile"><div class="k">' + t('stat_bank_balance') + '</div><div class="v">' + formatCurrency(state.bankBalance) + '</div>' +
+        '<button class="edit-link" data-action="edit-bank">✏️ ' + t('edit_bank_balance_link') + '</button></div>' +
+        '<div class="card stat-tile"><div class="k">' + t('stat_variance') + '</div><div class="v ' + diffCls + '">' + (diff > 0 ? '+' : '') + formatCurrency(diff) + '</div>' +
+        '<div style="font-size:11px;color:var(--slate-soft);margin-top:8px;">' + t('bank_reconcile_note') + '</div></div>'
+      );
+    }
+
     return (
       '<div class="grid-4">' +
       openingTile +
@@ -831,6 +1264,7 @@
       statTile(t('stat_expense'), s.totalExpense, 'negative') +
       statTile(t('stat_closing'), s.closingBalance, closingCls) +
       '</div>' +
+      '<div class="grid-2" style="margin-bottom:14px;">' + bankTile + '</div>' +
       '<div class="grid-2">' +
       breakdown(t('breakdown_income_title'), s.incomeByCategory, 'income') +
       breakdown(t('breakdown_expense_title'), s.expenseByCategory, 'expense') +
@@ -917,7 +1351,8 @@
 
     return (
       '<div class="card list-card">' +
-      '<div class="head">' + t('tx_list_title') + ' (' + txs.length + ')</div>' +
+      '<div class="head-row"><div class="head">' + t('tx_list_title') + ' (' + txs.length + ')</div>' +
+      '<button class="export-btn" data-action="export-transactions">⬇️ ' + t('export_transactions_btn') + '</button></div>' +
       body +
       '</div>'
     );
@@ -957,10 +1392,86 @@
     return (
       '<h2 class="section-title">' + t('reports_title') + '</h2>' +
       '<p class="section-desc">' + t('reports_desc') + '</p>' +
-      '<div class="card list-card"><div class="table-scroll"><table><thead><tr>' +
+      '<div class="card list-card"><div class="head-row"><div></div>' +
+      '<button class="export-btn" data-action="export-report">⬇️ ' + t('export_report_btn') + '</button></div>' +
+      '<div class="table-scroll"><table><thead><tr>' +
       '<th>' + t('th_month') + '</th><th>' + t('th_opening') + '</th><th>' + t('th_income') + '</th>' +
       '<th>' + t('th_expense') + '</th><th>' + t('th_net') + '</th><th>' + t('th_closing') + '</th><th>' + t('th_compare') + '</th>' +
       '</tr></thead><tbody>' + trs + '</tbody></table></div></div>'
+    );
+  }
+
+  // ---------------- Budget tab ----------------
+  function renderBudget() {
+    var s = computeMonthSummary(currentMonth);
+    var actualByCategory = {};
+    s.incomeByCategory.concat(s.expenseByCategory).forEach(function (it) { actualByCategory[it.category.id] = it.total; });
+
+    function budgetRow(c) {
+      var budget = state.budgets[c.id] || 0;
+      var actual = actualByCategory[c.id] || 0;
+      var pct = budget > 0 ? Math.min(100, Math.round((actual / budget) * 100)) : 0;
+      var isOver = c.type === 'expense' ? actual > budget && budget > 0 : actual < budget;
+      var barColor = c.type === 'expense' ? (isOver ? 'var(--danger)' : 'var(--success)') : (isOver ? 'var(--warning)' : 'var(--success)');
+      var statusHtml = budget > 0
+        ? ('<span class="' + (isOver ? (c.type === 'expense' ? 'over' : 'under') : '') + '">' + formatCurrency(actual) + '</span> / ' + formatCurrency(budget))
+        : ('<span class="mono">' + formatCurrency(actual) + '</span> · ' + t('no_budget_set'));
+      return (
+        '<div class="budget-row">' +
+        '<div class="name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="input-cell"><input type="number" step="0.01" min="0" placeholder="0.00" value="' + (state.budgets[c.id] || '') + '" data-action="set-budget" data-id="' + c.id + '"></div>' +
+        '<div class="vs"><div class="nums"><span>' + statusHtml + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div></div>' +
+        '</div>'
+      );
+    }
+
+    var incomeRows = state.categories.filter(function (c) { return c.type === 'income'; }).map(budgetRow).join('');
+    var expenseRows = state.categories.filter(function (c) { return c.type === 'expense'; }).map(budgetRow).join('');
+
+    var budgetCard = (
+      '<div class="card" style="margin-bottom:16px;">' +
+      '<h3 style="margin:0 0 4px;font-size:15px;font-weight:700;color:var(--success)">' + t('breakdown_income_title') + '</h3>' +
+      incomeRows +
+      '<h3 style="margin:18px 0 4px;font-size:15px;font-weight:700;color:var(--danger)">' + t('breakdown_expense_title') + '</h3>' +
+      expenseRows +
+      '</div>'
+    );
+
+    return (
+      '<h2 class="section-title">' + t('budget_title') + '</h2>' +
+      '<p class="section-desc">' + t('budget_desc') + '</p>' +
+      budgetCard +
+      renderCalendar()
+    );
+  }
+
+  function renderCalendar() {
+    var dailyNet = computeDailyNet(currentMonth);
+    var parts = currentMonth.split('-').map(Number);
+    var year = parts[0], monthIdx = parts[1] - 1;
+    var firstDow = new Date(year, monthIdx, 1).getDay();
+    var totalDays = daysInMonth(currentMonth);
+    var weekdayNames = t('weekdays');
+    var todayFull = todayStr();
+
+    var cells = '';
+    for (var i = 0; i < firstDow; i++) cells += '<div class="cal-day empty"></div>';
+    for (var day = 1; day <= totalDays; day++) {
+      var net = dailyNet[day] || 0;
+      var dateStr = currentMonth + '-' + pad2(day);
+      var isToday = dateStr === todayFull;
+      var netHtml = net !== 0 ? '<span class="net ' + (net > 0 ? 'positive' : 'negative') + '">' + (net > 0 ? '+' : '') + Math.round(net).toLocaleString('en-US') + '</span>' : '';
+      cells += '<div class="cal-day' + (isToday ? ' today' : '') + '"><span class="num">' + day + '</span>' + netHtml + '</div>';
+    }
+    var weekdayHtml = weekdayNames.map(function (w) { return '<div class="cal-weekday">' + w + '</div>'; }).join('');
+
+    return (
+      '<div class="card">' +
+      '<h3 style="margin:0 0 4px;font-size:15px;font-weight:700;">' + t('calendar_title') + '</h3>' +
+      '<p style="font-size:12.5px;color:var(--slate);margin:0 0 4px;">' + t('calendar_desc') + '</p>' +
+      '<div class="cal-grid">' + weekdayHtml + cells + '</div>' +
+      '</div>'
     );
   }
 
@@ -1167,6 +1678,253 @@
     );
   }
 
+  // ---------------- Loans tab ----------------
+  function renderLoans() {
+    if (selectedLoanId) {
+      var loan = state.loans.find(function (l) { return l.id === selectedLoanId; });
+      if (loan) return renderLoanDetail(loan);
+      selectedLoanId = null;
+    }
+    return renderLoansList();
+  }
+
+  function renderLoansList() {
+    var addForm = (
+      '<form id="loan-form" class="card" style="margin-bottom:16px;">' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('loan_name_label') + '</label><input type="text" id="loan-name" placeholder="' + t('loan_name_placeholder') + '"></div>' +
+      '<div class="field"><label>' + t('loan_principal_label') + '</label><input type="number" step="0.01" id="loan-principal" placeholder="0.00"></div>' +
+      '</div>' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('loan_installment_label') + '</label><input type="number" step="0.01" id="loan-installment" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('loan_term_label') + '</label><input type="number" step="1" min="1" id="loan-term" placeholder="12"></div>' +
+      '</div>' +
+      '<div id="loan-err" class="err"></div>' +
+      '<button type="submit" class="btn-primary btn-block">' + t('add_loan_btn') + '</button>' +
+      '</form>'
+    );
+
+    var tiles;
+    if (state.loans.length === 0) {
+      tiles = '<div class="card"><p class="empty">' + t('loans_empty') + '</p></div>';
+    } else {
+      tiles = '<div class="cards-grid">' + state.loans.map(function (l) {
+        var paid = computeLoanPaid(l.id);
+        var remaining = Math.max(0, l.principal - paid);
+        var pct = l.principal > 0 ? Math.min(100, Math.round((paid / l.principal) * 100)) : 0;
+
+        if (editingLoanId === l.id) {
+          return (
+            '<div class="card card-tile">' +
+            '<div class="card-edit-fields">' +
+            '<input id="edit-loan-name" value="' + escapeAttr(l.name) + '">' +
+            '<input id="edit-loan-installment" type="number" step="0.01" value="' + l.monthlyInstallment + '">' +
+            '</div>' +
+            '<div id="loan-edit-err" class="err" style="margin-bottom:10px;"></div>' +
+            '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-loan-edit" data-id="' + l.id + '">' + t('save') + '</button>' +
+            '<button class="btn-ghost" data-action="cancel-loan-edit">' + t('cancel') + '</button></div>' +
+            '</div>'
+          );
+        }
+
+        return (
+          '<div class="card card-tile">' +
+          '<div class="top-row"><div><div class="name">' + escapeHtml(l.name) + '</div>' +
+          '<div class="limit">' + t('loan_principal_label') + ': <span class="mono">' + formatCurrency(l.principal) + '</span></div></div>' +
+          '<div><button class="icon-btn" data-action="edit-loan" data-id="' + l.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-loan" data-id="' + l.id + '" data-name="' + escapeAttr(l.name) + '" title="delete">🗑️</button></div></div>' +
+          '<div class="usage-line"><span>' + t('loan_paid') + '</span><span class="used mono">' + formatCurrency(paid) + ' (' + pct + '%)</span></div>' +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="available">' + t('loan_remaining') + ': <span class="mono">' + formatCurrency(remaining) + '</span></div>' +
+          '<button class="btn-ghost btn-block" data-action="open-loan" data-id="' + l.id + '">' + t('loan_view_btn') + '</button>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    return (
+      '<h2 class="section-title">' + t('loans_title') + '</h2>' +
+      '<p class="section-desc">' + t('loans_desc') + '</p>' +
+      addForm + tiles
+    );
+  }
+
+  function renderLoanDetail(loan) {
+    var paid = computeLoanPaid(loan.id);
+    var remaining = Math.max(0, loan.principal - paid);
+    var pct = loan.principal > 0 ? Math.min(100, Math.round((paid / loan.principal) * 100)) : 0;
+    var estMonths = loan.monthlyInstallment > 0 ? Math.ceil(remaining / loan.monthlyInstallment) : 0;
+
+    var header = (
+      '<button class="card-back-btn" data-action="back-to-loans">' + (state.lang === 'ar' ? '→' : '←') + ' ' + t('back_to_loans') + '</button>' +
+      '<div class="card-detail-header"><div><h2>' + escapeHtml(loan.name) + '</h2>' +
+      '<div class="sub">' + t('loan_installment_label') + ': ' + formatCurrency(loan.monthlyInstallment) + ' · ' + t('loan_term_label') + ': ' + loan.termMonths + '</div></div></div>' +
+      '<div class="grid-4">' +
+      '<div class="card stat-tile"><div class="k">' + t('loan_principal_label') + '</div><div class="v">' + formatCurrency(loan.principal) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loan_paid') + '</div><div class="v positive">' + formatCurrency(paid) + '</div>' +
+      '<div class="progress-track" style="margin-top:10px;margin-bottom:0;"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loan_remaining') + '</div><div class="v negative">' + formatCurrency(remaining) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loan_est_remaining_months') + '</div><div class="v">' + estMonths + '</div></div>' +
+      '</div>'
+    );
+
+    return header + '<div class="tx-layout">' + renderLoanPaymentForm(loan) + renderLoanPaymentList(loan) + '</div>';
+  }
+
+  function renderLoanPaymentForm(loan) {
+    var editingP = editingLoanPaymentId ? state.loanPayments.find(function (p) { return p.id === editingLoanPaymentId; }) : null;
+    var date = editingP ? editingP.date : todayStr();
+    var amount = editingP ? editingP.amount : (loan.monthlyInstallment || '');
+    var note = editingP ? (editingP.note || '') : '';
+
+    return (
+      '<form id="loan-payment-form" class="card" data-loan-id="' + loan.id + '">' +
+      '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingP ? t('loan_payment_form_title_edit') : t('loan_payment_form_title_new')) + '</h3>' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="loan-payment-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="loan-payment-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="loan-payment-note" value="' + escapeAttr(note) + '"></div>' +
+      '<div id="loan-payment-err" class="err"></div>' +
+      '<div class="btn-row">' +
+      '<button type="submit" class="btn-primary income-btn">' + (editingP ? t('btn_save_edit') : t('btn_log_payment')) + '</button>' +
+      (editingP ? '<button type="button" class="btn-ghost" data-action="cancel-edit-loan-payment">' + t('cancel') + '</button>' : '') +
+      '</div>' +
+      '</form>'
+    );
+  }
+
+  function renderLoanPaymentList(loan) {
+    var payments = state.loanPayments
+      .filter(function (p) { return p.loanId === loan.id; })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+
+    var body;
+    if (payments.length === 0) {
+      body = '<div class="list-empty">' + t('loan_payments_empty') + '</div>';
+    } else {
+      var rows = payments.map(function (p) {
+        return (
+          '<tr>' +
+          '<td>' + p.date + '</td>' +
+          '<td>' + (p.note ? escapeHtml(p.note) : '—') + '</td>' +
+          '<td class="amt mono income">+' + formatCurrency(p.amount) + '</td>' +
+          '<td class="actions">' +
+          '<button class="icon-btn" data-action="edit-loan-payment" data-id="' + p.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-loan-payment" data-id="' + p.id + '" title="delete">🗑️</button>' +
+          '</td></tr>'
+        );
+      }).join('');
+      body = (
+        '<div class="table-scroll"><table><thead><tr>' +
+        '<th>' + t('th_date') + '</th><th>' + t('th_note') + '</th><th class="amt">' + t('th_amount') + '</th><th></th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+      );
+    }
+
+    return (
+      '<div class="card list-card">' +
+      '<div class="head">' + t('loan_payments_list_title') + ' (' + payments.length + ')</div>' +
+      body +
+      '</div>'
+    );
+  }
+
+  // ---------------- Subscriptions tab ----------------
+  function renderSubscriptions() {
+    var addForm = (
+      '<form id="sub-form" class="card" style="margin-bottom:16px;">' +
+      '<div class="grid-3">' +
+      '<div class="field"><label>' + t('sub_name_label') + '</label><input type="text" id="sub-name" placeholder="' + t('sub_name_placeholder') + '"></div>' +
+      '<div class="field"><label>' + t('sub_amount_label') + '</label><input type="number" step="0.01" id="sub-amount" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('sub_day_label') + '</label><input type="number" step="1" min="1" max="31" id="sub-day" placeholder="1"></div>' +
+      '</div>' +
+      '<div id="sub-err" class="err"></div>' +
+      '<button type="submit" class="btn-primary btn-block">' + t('add_sub_btn') + '</button>' +
+      '</form>'
+    );
+
+    var totalActive = state.subscriptions.filter(function (s) { return s.active; }).reduce(function (sum, s) { return sum + s.amount; }, 0);
+
+    var list;
+    if (state.subscriptions.length === 0) {
+      list = '<div class="card"><p class="empty">' + t('subs_empty') + '</p></div>';
+    } else {
+      var sorted = state.subscriptions.slice().sort(function (a, b) { return a.billingDay - b.billingDay; });
+      var rows = sorted.map(function (sub) {
+        if (editingSubId === sub.id) {
+          return (
+            '<div class="sub-row">' +
+            '<div class="card-edit-fields" style="flex:1;">' +
+            '<input id="edit-sub-name" value="' + escapeAttr(sub.name) + '">' +
+            '<input id="edit-sub-amount" type="number" step="0.01" value="' + sub.amount + '">' +
+            '<input id="edit-sub-day" type="number" min="1" max="31" value="' + sub.billingDay + '">' +
+            '<div id="sub-edit-err" class="err"></div>' +
+            '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-sub-edit" data-id="' + sub.id + '">' + t('save') + '</button>' +
+            '<button class="btn-ghost" data-action="cancel-sub-edit">' + t('cancel') + '</button></div>' +
+            '</div></div>'
+          );
+        }
+        return (
+          '<div class="sub-row">' +
+          '<div class="info"><div class="name">' + escapeHtml(sub.name) + ' <span class="pill ' + (sub.active ? 'active' : 'paused') + '">' + (sub.active ? t('status_active') : t('status_paused')) + '</span></div>' +
+          '<div class="meta' + (sub.active ? '' : ' paused') + '">' + t('day_of_month_short') + ' ' + sub.billingDay + ' · <span class="amt mono">' + formatCurrency(sub.amount) + '</span></div></div>' +
+          '<div class="actions-row">' +
+          '<button class="icon-btn" data-action="toggle-sub-active" data-id="' + sub.id + '" title="toggle">' + (sub.active ? '⏸️' : '▶️') + '</button>' +
+          '<button class="icon-btn" data-action="edit-sub" data-id="' + sub.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-sub" data-id="' + sub.id + '" data-name="' + escapeAttr(sub.name) + '" title="delete">🗑️</button>' +
+          '</div></div>'
+        );
+      }).join('');
+      list = '<div class="card">' + rows + '</div>';
+    }
+
+    return (
+      '<h2 class="section-title">' + t('subs_title') + '</h2>' +
+      '<p class="section-desc">' + t('subs_desc') + '</p>' +
+      addForm +
+      '<div class="card stat-tile" style="margin-bottom:16px;"><div class="k">' + t('subs_total') + '</div><div class="v negative">' + formatCurrency(totalActive) + '</div></div>' +
+      list
+    );
+  }
+
+  // ---------------- Notifications tab ----------------
+  function renderNotifications() {
+    var types = ['cardLimit', 'subscriptionsDue', 'budgetOverage', 'bankMismatch'];
+    var settingsHtml = types.map(function (key) {
+      var checked = state.notificationSettings[key] ? ' checked' : '';
+      return (
+        '<div class="settings-item"><span class="label">' + t('notif_type_' + key) + '</span>' +
+        '<label class="switch"><input type="checkbox" data-action="toggle-notif-setting" data-key="' + key + '"' + checked + '><span class="track"></span></label></div>'
+      );
+    }).join('');
+
+    var alerts = computeNotifications();
+    var alertsHtml;
+    if (alerts.length === 0) {
+      alertsHtml = '<p class="empty">' + t('notif_empty') + '</p>';
+    } else {
+      alertsHtml = alerts.map(function (a) {
+        var icon = a.level === 'danger' ? '🔴' : '🟡';
+        return (
+          '<div class="alert-item ' + a.level + '"><span class="icon">' + icon + '</span>' +
+          '<div class="body"><div class="title">' + escapeHtml(a.title) + '</div><div class="msg">' + escapeHtml(a.message) + '</div></div></div>'
+        );
+      }).join('');
+    }
+
+    return (
+      '<h2 class="section-title">' + t('notif_title') + '</h2>' +
+      '<p class="section-desc">' + t('notif_desc') + '</p>' +
+      '<div class="grid-2">' +
+      '<div class="card"><h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('notif_settings_title') + '</h3>' +
+      '<div class="settings-list">' + settingsHtml + '</div></div>' +
+      '<div class="card"><h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + t('notif_active_title') + '</h3>' +
+      alertsHtml + '</div>' +
+      '</div>'
+    );
+  }
+
   // ---------------- Event handling ----------------
   app.addEventListener('submit', function (e) {
     var form = e.target;
@@ -1284,6 +2042,99 @@
       render();
       return;
     }
+
+    if (form.id === 'bank-edit-form') {
+      e.preventDefault();
+      var bAmountRaw = document.getElementById('bank-edit-amount').value;
+      var bErrEl = document.getElementById('bank-edit-err');
+      if (bAmountRaw.trim() === '') { bErrEl.textContent = t('err_invalid_balance'); return; }
+      var bAmount = parseFloat(bAmountRaw);
+      if (isNaN(bAmount)) { bErrEl.textContent = t('err_invalid_balance'); return; }
+      state.bankBalance = bAmount;
+      state.bankBalanceUpdatedAt = todayStr();
+      editingBankBalance = false;
+      saveState();
+      render();
+      return;
+    }
+
+    if (form.id === 'loan-form') {
+      e.preventDefault();
+      var lName = document.getElementById('loan-name').value.trim();
+      var lPrincipal = parseFloat(document.getElementById('loan-principal').value);
+      var lInstallment = parseFloat(document.getElementById('loan-installment').value);
+      var lTerm = parseInt(document.getElementById('loan-term').value, 10);
+      var lErrEl = document.getElementById('loan-err');
+      if (!lName) { lErrEl.textContent = t('err_loan_name'); return; }
+      if (isNaN(lPrincipal) || lPrincipal <= 0) { lErrEl.textContent = t('err_loan_principal'); return; }
+      if (isNaN(lInstallment) || lInstallment <= 0) { lErrEl.textContent = t('err_loan_installment'); return; }
+      if (isNaN(lTerm) || lTerm <= 0) { lErrEl.textContent = t('err_loan_term'); return; }
+      state.loans.push({ id: uid(), name: lName, principal: lPrincipal, monthlyInstallment: lInstallment, termMonths: lTerm, startDate: todayStr() });
+      saveState();
+      render();
+      return;
+    }
+
+    if (form.id === 'loan-payment-form') {
+      e.preventDefault();
+      var pDate = document.getElementById('loan-payment-date').value;
+      var pAmount = parseFloat(document.getElementById('loan-payment-amount').value);
+      var pNote = document.getElementById('loan-payment-note').value.trim();
+      var pErrEl = document.getElementById('loan-payment-err');
+      if (isNaN(pAmount) || pAmount <= 0) { pErrEl.textContent = t('err_amount'); return; }
+
+      var loanId = form.dataset.loanId;
+      var pPayload = { loanId: loanId, date: pDate, amount: pAmount, note: pNote || undefined };
+
+      if (editingLoanPaymentId) {
+        state.loanPayments = state.loanPayments.map(function (p) {
+          return p.id === editingLoanPaymentId ? Object.assign({ id: p.id }, pPayload) : p;
+        });
+        editingLoanPaymentId = null;
+      } else {
+        pPayload.id = uid();
+        state.loanPayments.push(pPayload);
+      }
+      saveState();
+      render();
+      return;
+    }
+
+    if (form.id === 'sub-form') {
+      e.preventDefault();
+      var sName = document.getElementById('sub-name').value.trim();
+      var sAmount = parseFloat(document.getElementById('sub-amount').value);
+      var sDay = parseInt(document.getElementById('sub-day').value, 10);
+      var sErrEl = document.getElementById('sub-err');
+      if (!sName) { sErrEl.textContent = t('err_sub_name'); return; }
+      if (isNaN(sAmount) || sAmount <= 0) { sErrEl.textContent = t('err_sub_amount'); return; }
+      if (isNaN(sDay) || sDay < 1 || sDay > 31) { sErrEl.textContent = t('err_sub_day'); return; }
+      state.subscriptions.push({ id: uid(), name: sName, amount: sAmount, billingDay: sDay, active: true });
+      saveState();
+      render();
+      return;
+    }
+  });
+
+  app.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.dataset && el.dataset.action === 'set-budget') {
+      var val = parseFloat(el.value);
+      if (el.value.trim() === '' || isNaN(val) || val < 0) {
+        delete state.budgets[el.dataset.id];
+      } else {
+        state.budgets[el.dataset.id] = val;
+      }
+      saveState();
+      render();
+      return;
+    }
+    if (el.dataset && el.dataset.action === 'toggle-notif-setting') {
+      state.notificationSettings[el.dataset.key] = el.checked;
+      saveState();
+      render();
+      return;
+    }
   });
 
   app.addEventListener('click', function (e) {
@@ -1299,6 +2150,11 @@
       selectedCardId = null;
       editingCardId = null;
       editingCardTxId = null;
+      selectedLoanId = null;
+      editingLoanId = null;
+      editingLoanPaymentId = null;
+      editingBankBalance = false;
+      editingSubId = null;
       render();
       return;
     }
@@ -1415,6 +2271,109 @@
     if (action === 'delete-card-tx') {
       if (confirm(t('confirm_delete_tx'))) {
         state.cardTransactions = state.cardTransactions.filter(function (tx) { return tx.id !== btn.dataset.id; });
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    // ----- Bank reconciliation -----
+    if (action === 'edit-bank') { editingBankBalance = true; render(); return; }
+    if (action === 'cancel-edit-bank') { editingBankBalance = false; render(); return; }
+
+    // ----- Export -----
+    if (action === 'export-transactions') {
+      var catByIdX = {};
+      state.categories.forEach(function (c) { catByIdX[c.id] = c; });
+      var rowsX = [[t('th_date'), t('th_type'), t('th_category'), t('th_note'), t('th_amount')]];
+      state.transactions.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (tx) {
+        var cat = catByIdX[tx.categoryId];
+        rowsX.push([tx.date, tx.type === 'income' ? t('type_income') : t('type_expense'), cat ? cat.name : '', tx.note || '', tx.amount]);
+      });
+      exportCsv('transactions.csv', rowsX);
+      return;
+    }
+    if (action === 'export-report') {
+      var monthKeysX = getReportMonthKeys().slice().reverse();
+      var rowsR = [[t('th_month'), t('th_opening'), t('th_income'), t('th_expense'), t('th_net'), t('th_closing')]];
+      monthKeysX.forEach(function (mk) {
+        var r = computeMonthSummary(mk);
+        rowsR.push([formatMonthLabel(r.monthKey), r.openingBalance, r.totalIncome, r.totalExpense, r.totalIncome - r.totalExpense, r.closingBalance]);
+      });
+      exportCsv('monthly-report.csv', rowsR);
+      return;
+    }
+
+    // ----- Loans -----
+    if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; render(); return; }
+    if (action === 'back-to-loans') { selectedLoanId = null; render(); return; }
+    if (action === 'edit-loan') { editingLoanId = btn.dataset.id; render(); return; }
+    if (action === 'cancel-loan-edit') { editingLoanId = null; render(); return; }
+    if (action === 'save-loan-edit') {
+      var loanName = document.getElementById('edit-loan-name').value.trim();
+      var loanInstallment = parseFloat(document.getElementById('edit-loan-installment').value);
+      var loanEditErrEl = document.getElementById('loan-edit-err');
+      if (!loanName) { loanEditErrEl.textContent = t('err_loan_name'); return; }
+      if (isNaN(loanInstallment) || loanInstallment <= 0) { loanEditErrEl.textContent = t('err_loan_installment'); return; }
+      state.loans = state.loans.map(function (l) { return l.id === btn.dataset.id ? Object.assign({}, l, { name: loanName, monthlyInstallment: loanInstallment }) : l; });
+      editingLoanId = null;
+      saveState();
+      render();
+      return;
+    }
+    if (action === 'delete-loan') {
+      var loanMsg = state.lang === 'ar'
+        ? ('هل تريد حذف قرض "' + btn.dataset.name + '"؟ سيتم حذف كل دفعاته.')
+        : ('Delete loan "' + btn.dataset.name + '"? All its payments will be deleted too.');
+      if (confirm(loanMsg)) {
+        var delLoanId = btn.dataset.id;
+        state.loans = state.loans.filter(function (l) { return l.id !== delLoanId; });
+        state.loanPayments = state.loanPayments.filter(function (p) { return p.loanId !== delLoanId; });
+        if (selectedLoanId === delLoanId) selectedLoanId = null;
+        saveState();
+        render();
+      }
+      return;
+    }
+    if (action === 'cancel-edit-loan-payment') { editingLoanPaymentId = null; render(); return; }
+    if (action === 'edit-loan-payment') { editingLoanPaymentId = btn.dataset.id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (action === 'delete-loan-payment') {
+      if (confirm(t('confirm_delete_tx'))) {
+        state.loanPayments = state.loanPayments.filter(function (p) { return p.id !== btn.dataset.id; });
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    // ----- Subscriptions -----
+    if (action === 'toggle-sub-active') {
+      state.subscriptions = state.subscriptions.map(function (s) { return s.id === btn.dataset.id ? Object.assign({}, s, { active: !s.active }) : s; });
+      saveState();
+      render();
+      return;
+    }
+    if (action === 'edit-sub') { editingSubId = btn.dataset.id; render(); return; }
+    if (action === 'cancel-sub-edit') { editingSubId = null; render(); return; }
+    if (action === 'save-sub-edit') {
+      var subName = document.getElementById('edit-sub-name').value.trim();
+      var subAmount = parseFloat(document.getElementById('edit-sub-amount').value);
+      var subDay = parseInt(document.getElementById('edit-sub-day').value, 10);
+      var subEditErrEl = document.getElementById('sub-edit-err');
+      if (!subName) { subEditErrEl.textContent = t('err_sub_name'); return; }
+      if (isNaN(subAmount) || subAmount <= 0) { subEditErrEl.textContent = t('err_sub_amount'); return; }
+      if (isNaN(subDay) || subDay < 1 || subDay > 31) { subEditErrEl.textContent = t('err_sub_day'); return; }
+      state.subscriptions = state.subscriptions.map(function (s) { return s.id === btn.dataset.id ? Object.assign({}, s, { name: subName, amount: subAmount, billingDay: subDay }) : s; });
+      editingSubId = null;
+      saveState();
+      render();
+      return;
+    }
+    if (action === 'delete-sub') {
+      var subMsg = state.lang === 'ar' ? ('هل تريد حذف اشتراك "' + btn.dataset.name + '"؟') : ('Delete subscription "' + btn.dataset.name + '"?');
+      if (confirm(subMsg)) {
+        var delSubId = btn.dataset.id;
+        state.subscriptions = state.subscriptions.filter(function (s) { return s.id !== delSubId; });
         saveState();
         render();
       }
