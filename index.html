@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#0B1420">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="تدفقاتي">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>متابعة التدفقات النقدية الشهرية</title>
 <style>
   :root{
@@ -420,6 +426,20 @@
   .head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line); }
   .head-row .head{ padding:0; border:none; }
 
+  /* ---------- Search / filter bar ---------- */
+  .filter-bar{ padding:14px 20px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:9px; }
+  .filter-bar input, .filter-bar select{
+    font-family:inherit; font-size:13.5px; padding:9px 11px; border-radius:9px;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink); width:100%;
+  }
+  .filter-bar .row{ display:flex; gap:8px; }
+  .filter-bar .row > *{ flex:1; min-width:0; }
+  .filter-bar .clear-link{
+    align-self:flex-start; font-size:12px; color:var(--slate-soft); background:none; border:none;
+    cursor:pointer; text-decoration:underline; padding:0; font-family:inherit;
+  }
+  .filter-bar .clear-link:hover{ color:var(--ink); }
+
   /* ---------- Investments ---------- */
   .no-maturity-row{ display:flex; align-items:center; gap:7px; margin-top:9px; font-size:12.5px; color:var(--slate); }
   .no-maturity-row input{ width:auto; }
@@ -602,6 +622,12 @@
       btn_add_tx: 'إضافة العملية',
       btn_save_edit: 'حفظ التعديل',
       tx_list_title: 'عمليات الشهر',
+      tx_results_title: 'نتائج البحث (كل الأشهر)',
+      tx_search_placeholder: 'ابحث بالملاحظة أو اسم البند...',
+      filter_all_types: 'كل الأنواع',
+      filter_all_categories: 'كل البنود',
+      clear_filters: 'مسح الفلاتر',
+      tx_search_empty: 'لا توجد نتائج مطابقة',
       th_date: 'التاريخ',
       th_category: 'البند',
       th_note: 'ملاحظة',
@@ -1073,6 +1099,10 @@
   var editingSubId = null;
   var editingInvestmentId = null;
 
+  var txSearchQuery = '';
+  var txFilterCategoryId = '';
+  var txFilterType = '';
+
   var chartBreakdownType = 'expense';
   var chartActive = {};
 
@@ -1289,16 +1319,40 @@
     );
   }
 
-  function renderTransactionList() {
+  function hasActiveTxFilter() {
+    return txSearchQuery.trim() !== '' || txFilterCategoryId !== '' || txFilterType !== '';
+  }
+
+  function getFilteredTransactions() {
+    var q = txSearchQuery.trim().toLowerCase();
     var catById = {};
     state.categories.forEach(function (c) { catById[c.id] = c; });
-    var txs = state.transactions
-      .filter(function (tx) { return monthKeyOf(tx.date) === currentMonth; })
-      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+
+    var source = hasActiveTxFilter()
+      ? state.transactions
+      : state.transactions.filter(function (tx) { return monthKeyOf(tx.date) === currentMonth; });
+
+    return source.filter(function (tx) {
+      if (txFilterType && tx.type !== txFilterType) return false;
+      if (txFilterCategoryId && tx.categoryId !== txFilterCategoryId) return false;
+      if (q) {
+        var cat = catById[tx.categoryId];
+        var haystack = ((tx.note || '') + ' ' + (cat ? cat.name : '')).toLowerCase();
+        if (haystack.indexOf(q) === -1) return false;
+      }
+      return true;
+    }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+  }
+
+  function renderTransactionListBody() {
+    var catById = {};
+    state.categories.forEach(function (c) { catById[c.id] = c; });
+    var txs = getFilteredTransactions();
+    var filtered = hasActiveTxFilter();
 
     var body;
     if (txs.length === 0) {
-      body = '<div class="list-empty">' + t('tx_empty') + '</div>';
+      body = '<div class="list-empty">' + (filtered ? t('tx_search_empty') : t('tx_empty')) + '</div>';
     } else {
       var rows = txs.map(function (tx) {
         var cat = catById[tx.categoryId];
@@ -1323,10 +1377,36 @@
     }
 
     return (
-      '<div class="card list-card">' +
-      '<div class="head-row"><div class="head">' + t('tx_list_title') + ' (' + txs.length + ')</div>' +
+      '<div class="head-row"><div class="head">' + (filtered ? t('tx_results_title') : t('tx_list_title')) + ' (' + txs.length + ')</div>' +
       '<button class="export-btn" data-action="export-transactions">⬇️ ' + t('export_transactions_btn') + '</button></div>' +
-      body +
+      body
+    );
+  }
+
+  function renderTransactionList() {
+    var catOptions = '<option value="">' + t('filter_all_categories') + '</option>' + state.categories.map(function (c) {
+      return '<option value="' + c.id + '"' + (c.id === txFilterCategoryId ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>';
+    }).join('');
+
+    var filterBar = (
+      '<div class="filter-bar">' +
+      '<input type="text" id="tx-search-input" placeholder="' + t('tx_search_placeholder') + '" value="' + escapeAttr(txSearchQuery) + '">' +
+      '<div class="row">' +
+      '<select id="tx-filter-type">' +
+      '<option value="">' + t('filter_all_types') + '</option>' +
+      '<option value="income"' + (txFilterType === 'income' ? ' selected' : '') + '>' + t('type_income') + '</option>' +
+      '<option value="expense"' + (txFilterType === 'expense' ? ' selected' : '') + '>' + t('type_expense') + '</option>' +
+      '</select>' +
+      '<select id="tx-filter-category">' + catOptions + '</select>' +
+      '</div>' +
+      (hasActiveTxFilter() ? '<button type="button" class="clear-link" data-action="clear-tx-filters">✖ ' + t('clear_filters') + '</button>' : '') +
+      '</div>'
+    );
+
+    return (
+      '<div class="card list-card">' +
+      filterBar +
+      '<div id="tx-list-body">' + renderTransactionListBody() + '</div>' +
       '</div>'
     );
   }
@@ -2420,8 +2500,23 @@
     }
   });
 
+  app.addEventListener('input', function (e) {
+    if (e.target.id === 'tx-search-input') {
+      txSearchQuery = e.target.value;
+      var body = document.getElementById('tx-list-body');
+      if (body) body.innerHTML = renderTransactionListBody();
+    }
+  });
+
   app.addEventListener('change', function (e) {
     var el = e.target;
+    if (el.id === 'tx-filter-type' || el.id === 'tx-filter-category') {
+      if (el.id === 'tx-filter-type') txFilterType = el.value;
+      if (el.id === 'tx-filter-category') txFilterCategoryId = el.value;
+      // full re-render so the "clear filters" link appears/disappears correctly
+      render();
+      return;
+    }
     if (el.dataset && el.dataset.action === 'set-budget') {
       var val = parseFloat(el.value);
       if (el.value.trim() === '' || isNaN(val) || val < 0) {
@@ -2509,6 +2604,9 @@
       editingSubId = null;
       editingInvestmentId = null;
       chartActive = {};
+      txSearchQuery = '';
+      txFilterCategoryId = '';
+      txFilterType = '';
       render();
       return;
     }
@@ -2630,6 +2728,13 @@
     if (action === 'cancel-edit-bank') { editingBankBalance = false; render(); return; }
 
     // ----- Export -----
+    if (action === 'clear-tx-filters') {
+      txSearchQuery = '';
+      txFilterCategoryId = '';
+      txFilterType = '';
+      render();
+      return;
+    }
     if (action === 'export-transactions') {
       var catByIdX = {};
       state.categories.forEach(function (c) { catByIdX[c.id] = c; });
