@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0B1420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>متابعة التدفقات النقدية الشهرية</title>
 <style>
   :root{
@@ -21,43 +24,35 @@
     --warning:#FBBF24;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
     --radius: 16px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
   }
-  :root[data-theme="light"]{
-    --paper:#F8FAFC;
-    --card:#FFFFFF;
-    --card-alt:#F8FAFC;
-    --ink:#0F172A;
-    --ink-soft:#334155;
-    --slate:#64748B;
-    --slate-soft:#94A3B8;
-    --line:#E2E8F0;
-    --success:#0E9F6E;
-    --success-soft:#DCFCE7;
-    --danger:#E11D48;
-    --danger-soft:#FFE4E6;
-    --warning:#B45309;
-    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; padding:0; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html{ background:var(--paper); }
+  html,body{ margin:0; padding:0; overscroll-behavior-y:none; }
   body{
     font-family:'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
     background:var(--paper);
     color:var(--ink);
     min-height:100vh;
+    min-height:100dvh;
     -webkit-font-smoothing:antialiased;
-    transition:background .2s ease, color .2s ease;
+    padding-left:var(--safe-l);
+    padding-right:var(--safe-r);
   }
   .mono{ font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; font-variant-numeric: tabular-nums; direction:ltr; unicode-bidi:plaintext; }
-  .wrap{ max-width:1100px; margin:0 auto; padding:0 0 80px; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 0 calc(80px + var(--safe-b)); }
 
   /* ---------- Setup gate ---------- */
   .gate{
     min-height:100vh;
+    min-height:100dvh;
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:24px;
+    padding:calc(24px + var(--safe-t)) 24px calc(24px + var(--safe-b));
   }
   .gate .card{ max-width:420px; width:100%; }
   .gate h1{ font-size:20px; margin:0 0 6px; font-weight:700; }
@@ -68,6 +63,7 @@
     background:var(--card);
     border-bottom:1px solid var(--line);
     margin-bottom:24px;
+    padding-top:var(--safe-t);
   }
   header.top .inner{
     max-width:1100px;
@@ -84,13 +80,6 @@
   }
   header.top h1{ font-size:16.5px; font-weight:700; margin:0; }
   .controls{ display:flex; align-items:center; gap:8px; }
-  .icon-toggle{
-    width:36px; height:36px; border-radius:50%;
-    border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; font-size:15px;
-  }
-  .icon-toggle:hover{ border-color:var(--success); }
   .lang-toggle{
     border-radius:18px; padding:0 13px; height:36px;
     font-family:inherit; font-weight:700; font-size:12px;
@@ -124,7 +113,7 @@
   .month-nav .label{ font-weight:700; font-size:13.5px; min-width:110px; text-align:center; }
   .month-nav-row{ margin-bottom:14px; }
 
-  .tabs{ display:flex; gap:2px; overflow-x:auto; padding-bottom:1px; scrollbar-width:thin; }
+  .tabs{ display:flex; gap:2px; overflow-x:auto; padding-bottom:1px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
   .tab{
     appearance:none;
     border:none;
@@ -217,8 +206,6 @@
   }
   .type-btn.active-income{ background:var(--success); border-color:var(--success); color:#08150F; }
   .type-btn.active-expense{ background:var(--danger); border-color:var(--danger); color:#2B0710; }
-  :root[data-theme="light"] .type-btn.active-income{ color:#fff; }
-  :root[data-theme="light"] .type-btn.active-expense{ color:#fff; }
 
   .btn-primary{
     width:100%;
@@ -236,8 +223,6 @@
   .btn-primary:hover{ opacity:.9; }
   .btn-primary.income-btn{ background:var(--success); color:#08150F; }
   .btn-primary.expense-btn{ background:var(--danger); color:#2B0710; }
-  :root[data-theme="light"] .btn-primary.income-btn{ color:#fff; }
-  :root[data-theme="light"] .btn-primary.expense-btn{ color:#fff; }
   .btn-row{ display:flex; gap:8px; }
   .btn-ghost{
     appearance:none;
@@ -260,7 +245,7 @@
 
   .list-card{ padding:0; overflow:hidden; }
   .list-card .head{ padding:16px 20px; border-bottom:1px solid var(--line); font-weight:700; font-size:14.5px; }
-  .table-scroll{ overflow-x:auto; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table{ width:100%; border-collapse:collapse; font-size:13.5px; }
   thead th{ text-align:start; font-size:11.5px; font-weight:600; color:var(--slate); padding:8px 20px; border-bottom:1px solid var(--line); white-space:nowrap; }
   thead th.amt{ text-align:end; }
@@ -424,6 +409,21 @@
   .export-btn:hover{ border-color:var(--success); color:var(--ink); }
   .head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line); }
   .head-row .head{ padding:0; border:none; }
+
+  /* ---------- Mobile / iPhone polish ---------- */
+  @media (max-width:640px){
+    input, select, textarea{ font-size:16px !important; }
+    .icon-btn{ font-size:15px; padding:9px 10px; }
+    .tab{ padding:12px 14px; min-height:44px; }
+    .month-nav button{ padding:9px 12px; min-height:38px; }
+    .type-btn{ padding:13px 10px; }
+    .btn-primary, .btn-ghost{ padding:13px 12px; }
+    .lang-toggle{ min-width:44px; }
+    .switch{ width:46px; height:27px; }
+    .switch .track::before{ height:21px; width:21px; }
+    html[dir="rtl"] .switch input:checked + .track::before{ transform:translateX(-19px); }
+    html[dir="ltr"] .switch input:checked + .track::before{ transform:translateX(19px); }
+  }
 </style>
 </head>
 <body>
@@ -457,7 +457,6 @@
       bankBalance: null,
       bankBalanceUpdatedAt: null,
       notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true },
-      theme: 'dark',
       lang: 'ar'
     };
   }
@@ -482,7 +481,6 @@
         bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
         bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
         notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
-        theme: parsed.theme || 'dark',
         lang: parsed.lang || 'ar'
       };
     } catch (e) {
@@ -514,7 +512,7 @@
   }
   function formatCurrency(amount) {
     var rounded = Math.round(amount * 100) / 100;
-    return rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + t('currency_suffix');
+    return rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function (c) {
@@ -610,7 +608,6 @@
       err_card_name: 'أدخل اسم البطاقة',
       err_card_limit: 'أدخل حدًا ائتمانيًا صحيحًا أكبر من صفر',
       th_type: 'النوع',
-      currency_suffix: 'ر.س',
 
       tab_budget: 'الميزانية',
       tab_loans: 'القروض',
@@ -787,7 +784,6 @@
       err_card_name: 'Enter the card name',
       err_card_limit: 'Enter a valid credit limit greater than zero',
       th_type: 'Type',
-      currency_suffix: 'SAR',
 
       tab_budget: 'Budget',
       tab_loans: 'Loans',
@@ -892,7 +888,6 @@
     var html = document.documentElement;
     html.setAttribute('lang', state.lang);
     html.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
-    html.setAttribute('data-theme', state.theme);
     document.title = t('brand_title');
   }
 
@@ -1193,14 +1188,11 @@
         '</div></div>'
       : '';
 
-    var themeIcon = state.theme === 'dark' ? '☀️' : '🌙';
-
     return (
       '<header class="top"><div class="inner">' +
       '<div class="row1"><h1>' + t('brand_title') + '</h1>' +
       '<div class="controls">' +
       '<button class="lang-toggle" data-action="toggle-lang">' + t('lang_toggle') + '</button>' +
-      '<button class="icon-toggle" data-action="toggle-theme" title="theme">' + themeIcon + '</button>' +
       '</div></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       monthNavRow +
@@ -2217,7 +2209,6 @@
           bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
           bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
           notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
-          theme: parsed.theme || state.theme,
           lang: parsed.lang || state.lang
         };
         saveState();
@@ -2254,7 +2245,6 @@
     if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); render(); return; }
     if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); render(); return; }
 
-    if (action === 'toggle-theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; saveState(); render(); return; }
     if (action === 'toggle-lang') { state.lang = state.lang === 'ar' ? 'en' : 'ar'; saveState(); render(); return; }
 
     if (action === 'edit-opening') { editingOpeningBalance = true; render(); return; }
