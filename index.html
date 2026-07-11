@@ -24,6 +24,16 @@
     --warning:#FBBF24;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
     --radius: 16px;
+    --muted-ink:#6C7B90;
+    --gridline:#22374F;
+    --series-1:#3987e5;
+    --series-2:#199e70;
+    --series-3:#c98500;
+    --series-4:#008300;
+    --series-5:#9085e9;
+    --series-6:#e66767;
+    --series-7:#d55181;
+    --series-8:#d95926;
     --safe-t: env(safe-area-inset-top, 0px);
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-l: env(safe-area-inset-left, 0px);
@@ -79,13 +89,6 @@
     margin-bottom:14px;
   }
   header.top h1{ font-size:16.5px; font-weight:700; margin:0; }
-  .controls{ display:flex; align-items:center; gap:8px; }
-  .lang-toggle{
-    border-radius:18px; padding:0 13px; height:36px;
-    font-family:inherit; font-weight:700; font-size:12px;
-    border:1px solid var(--line); background:var(--card-alt); color:var(--ink); cursor:pointer;
-  }
-  .lang-toggle:hover{ border-color:var(--success); }
 
   .month-nav{
     display:flex;
@@ -144,11 +147,18 @@
   .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; }
   .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; }
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   @media (max-width:720px){ .grid-4{ grid-template-columns:1fr 1fr; } .grid-2{ grid-template-columns:1fr; } .grid-3{ grid-template-columns:1fr; } }
-  @media (max-width:460px){ .grid-4{ grid-template-columns:1fr; } }
+  @media (max-width:420px){ .grid-4{ gap:8px; } .stat-grid{ gap:8px; } }
 
-  .stat-tile .k{ font-size:12px; font-weight:600; color:var(--slate); margin-bottom:8px; }
-  .stat-tile .v{ font-size:20px; font-weight:700; }
+  .card.stat-tile{ padding:13px 12px; }
+  .stat-tile .k{ font-size:11px; font-weight:600; color:var(--slate); margin-bottom:5px; line-height:1.3; }
+  .stat-tile .v{ font-size:17px; font-weight:700; }
+  @media (max-width:420px){
+    .card.stat-tile{ padding:11px 10px; }
+    .stat-tile .k{ font-size:10px; margin-bottom:4px; }
+    .stat-tile .v{ font-size:15px; }
+  }
   .v.positive{ color:var(--success); }
   .v.negative{ color:var(--danger); }
   .edit-link{
@@ -410,6 +420,39 @@
   .head-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line); }
   .head-row .head{ padding:0; border:none; }
 
+  /* ---------- Investments ---------- */
+  .no-maturity-row{ display:flex; align-items:center; gap:7px; margin-top:9px; font-size:12.5px; color:var(--slate); }
+  .no-maturity-row input{ width:auto; }
+
+  /* ---------- Charts ---------- */
+  .chart-card{ margin-bottom:16px; }
+  .chart-card h3{ margin:0 0 4px; font-size:15px; font-weight:700; }
+  .chart-card .sub{ font-size:12px; color:var(--slate); margin:0 0 14px; }
+  .chart-detail{
+    min-height:20px; font-size:13px; color:var(--ink-soft); margin-top:4px; padding:10px 12px;
+    background:var(--card-alt); border-radius:9px; border:1px solid var(--line);
+  }
+  .chart-detail .val{ font-weight:700; color:var(--ink); font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; unicode-bidi:plaintext; }
+  .chart-svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .chart-svg .mark{ cursor:pointer; transition:opacity .12s ease; }
+  .chart-svg .mark:hover, .chart-svg .mark.active{ opacity:.75; }
+  .chart-svg .mark.dim{ opacity:.28; }
+  .chart-svg .axis-label{ font-size:10px; fill:var(--muted-ink); font-family:inherit; }
+  .chart-svg .gridline{ stroke:var(--gridline); stroke-width:1; }
+  .chart-legend{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:14px; }
+  .chart-legend .item{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-soft); cursor:pointer; padding:3px 0; }
+  .chart-legend .item.dim{ opacity:.4; }
+  .chart-legend .swatch{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .chart-legend .swatch.line{ width:14px; height:2px; border-radius:0; }
+  .chart-toggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .donut-wrap{ position:relative; max-width:220px; margin:0 auto; }
+  .donut-center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; pointer-events:none;
+  }
+  .donut-center .lbl{ font-size:10.5px; color:var(--slate); margin-bottom:3px; }
+  .donut-center .val{ font-size:15px; font-weight:700; color:var(--ink); font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; unicode-bidi:plaintext; }
+
   /* ---------- Mobile / iPhone polish ---------- */
   @media (max-width:640px){
     input, select, textarea{ font-size:16px !important; }
@@ -418,7 +461,6 @@
     .month-nav button{ padding:9px 12px; min-height:38px; }
     .type-btn{ padding:13px 10px; }
     .btn-primary, .btn-ghost{ padding:13px 12px; }
-    .lang-toggle{ min-width:44px; }
     .switch{ width:46px; height:27px; }
     .switch .track::before{ height:21px; width:21px; }
     html[dir="rtl"] .switch input:checked + .track::before{ transform:translateX(-19px); }
@@ -453,11 +495,11 @@
       loans: [],
       loanPayments: [],
       subscriptions: [],
+      investments: [],
       budgets: {},
       bankBalance: null,
       bankBalanceUpdatedAt: null,
-      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true },
-      lang: 'ar'
+      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true }
     };
   }
 
@@ -477,11 +519,11 @@
         loans: parsed.loans || [],
         loanPayments: parsed.loanPayments || [],
         subscriptions: parsed.subscriptions || [],
+        investments: parsed.investments || [],
         budgets: parsed.budgets || {},
         bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
         bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
-        notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
-        lang: parsed.lang || 'ar'
+        notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
       };
     } catch (e) {
       return defaultState();
@@ -492,10 +534,7 @@
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 
-  var MONTHS = {
-    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-    en: ['January','February','March','April','May','June','July','August','September','October','November','December']
-  };
+  var MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
@@ -508,7 +547,7 @@
   }
   function formatMonthLabel(monthKey) {
     var parts = monthKey.split('-').map(Number);
-    return MONTHS[state.lang][parts[1] - 1] + ' ' + parts[0];
+    return MONTHS[parts[1] - 1] + ' ' + parts[0];
   }
   function formatCurrency(amount) {
     var rounded = Math.round(amount * 100) / 100;
@@ -523,7 +562,6 @@
 
   // ---------------- i18n ----------------
   var I18N = {
-    ar: {
       brand_title: 'متابعة التدفقات النقدية الشهرية',
       tab_summary: 'الملخص الشهري',
       tab_transactions: 'العمليات اليومية',
@@ -532,7 +570,6 @@
       tab_categories: 'البنود',
       month_prev: 'السابق',
       month_next: 'التالي',
-      lang_toggle: 'EN',
       gate_title: 'مرحبًا بك في متابعة التدفقات النقدية',
       gate_desc: 'قبل البدء، أدخل رصيد النقد الافتتاحي وتاريخه ليكون أساس حساب رصيدك الشهري.',
       gate_amount_label: 'الرصيد النقدي الافتتاحي',
@@ -612,6 +649,8 @@
       tab_budget: 'الميزانية',
       tab_loans: 'القروض',
       tab_subscriptions: 'الاشتراكات',
+      tab_investments: 'الاستثمارات',
+      tab_charts: 'الرسوم البيانية',
       tab_notifications: 'الإشعارات',
 
       budget_title: 'الميزانية الشهرية',
@@ -697,197 +736,48 @@
       import_backup_btn: 'استيراد نسخة احتياطية',
       confirm_import_backup: 'سيتم استبدال جميع بياناتك الحالية بالنسخة المستوردة. هل تريد المتابعة؟',
       import_success: 'تم استيراد النسخة الاحتياطية بنجاح',
-      import_error: 'ملف النسخة الاحتياطية غير صالح'
-    },
-    en: {
-      brand_title: 'Monthly Cash Flow Tracker',
-      tab_summary: 'Monthly Summary',
-      tab_transactions: 'Daily Transactions',
-      tab_reports: 'Reports',
-      tab_cards: 'Credit Cards',
-      tab_categories: 'Items',
-      month_prev: 'Previous',
-      month_next: 'Next',
-      lang_toggle: 'AR',
-      gate_title: 'Welcome to your Cash Flow Tracker',
-      gate_desc: 'Before you start, enter your opening cash balance and its date — this is the base for your monthly balance calculations.',
-      gate_amount_label: 'Opening Cash Balance',
-      gate_date_label: 'Opening Balance Date',
-      gate_submit: 'Get Started',
-      gate_restore_link: 'Restore a previous backup',
-      err_invalid_balance: 'Please enter a valid balance',
-      stat_opening: 'Opening Balance',
-      stat_income: 'Total Income',
-      stat_expense: 'Total Expenses',
-      stat_closing: 'Closing Balance',
-      edit_opening_link: 'Edit opening balance',
-      save: 'Save',
-      cancel: 'Cancel',
-      breakdown_income_title: 'Income by Category',
-      breakdown_expense_title: 'Expenses by Category',
-      breakdown_empty: 'No transactions this month',
-      tx_form_title_new: 'Log New Transaction',
-      tx_form_title_edit: 'Edit Transaction',
-      type_income: 'Income',
-      type_expense: 'Expense',
-      field_date: 'Date',
-      field_amount: 'Amount',
-      field_category: 'Category',
-      field_category_placeholder: 'Select category',
-      field_note: 'Note (optional)',
-      no_categories_warning: 'No categories of this type yet — add one from the Items tab first.',
-      err_select_category: 'Select a category',
-      err_amount: 'Enter a valid amount greater than zero',
-      btn_add_tx: 'Add Transaction',
-      btn_save_edit: 'Save Changes',
-      tx_list_title: "This Month's Transactions",
-      th_date: 'Date',
-      th_category: 'Category',
-      th_note: 'Note',
-      th_amount: 'Amount',
-      tx_empty: 'No transactions logged this month yet',
-      confirm_delete_tx: 'Delete this transaction?',
-      reports_title: 'Monthly Comparison',
-      reports_desc: "Compare opening balance, income, expenses and closing balance across months.",
-      th_month: 'Month',
-      th_opening: 'Opening',
-      th_income: 'Income',
-      th_expense: 'Expenses',
-      th_net: 'Net Change',
-      th_closing: 'Closing',
-      th_compare: 'Comparison',
-      reports_empty: 'Not enough data yet to show a report',
-      categories_title: 'Manage Income & Expense Items',
-      income_items_title: 'Income Items',
-      expense_items_title: 'Expense Items',
-      new_income_item_placeholder: 'New income item',
-      new_expense_item_placeholder: 'New expense item',
-      add: 'Add',
-      no_items_yet: 'No items yet',
-      cards_title: 'Credit Cards',
-      cards_desc: 'Add your credit cards and their limits, and log purchases and payments on each card to track your usage.',
-      card_name_label: 'Card Name',
-      card_name_placeholder: 'e.g. Al Rajhi Card',
-      card_limit_label: 'Credit Limit',
-      add_card_btn: 'Add Card',
-      card_used: 'Used',
-      card_available: 'Available',
-      card_view_btn: 'View Transactions',
-      cards_empty: 'No cards added yet',
-      back_to_cards: 'Back to Cards',
-      card_tx_form_title_new: 'Log Card Transaction',
-      card_tx_form_title_edit: 'Edit Card Transaction',
-      type_purchase: 'Purchase',
-      type_payment: 'Payment',
-      card_tx_list_title: 'Card Transactions',
-      card_tx_empty: 'No transactions on this card yet',
-      err_card_name: 'Enter the card name',
-      err_card_limit: 'Enter a valid credit limit greater than zero',
-      th_type: 'Type',
+      import_error: 'ملف النسخة الاحتياطية غير صالح',
 
-      tab_budget: 'Budget',
-      tab_loans: 'Loans',
-      tab_subscriptions: 'Subscriptions',
-      tab_notifications: 'Notifications',
+      investments_title: 'إدارة الاستثمارات',
+      investments_desc: 'أضِف استثماراتك بمبلغها ونوعها والتطبيق أو الجهة المستخدمة، وتاريخ استحقاقها إن وجد.',
+      investment_amount_label: 'المبلغ',
+      investment_type_label: 'نوع الاستثمار',
+      investment_type_placeholder: 'مثال: أسهم، صناديق، ذهب، عقار',
+      investment_platform_label: 'التطبيق / الجهة',
+      investment_platform_placeholder: 'مثال: تداول، ثمار، الراجحي كابيتال',
+      investment_maturity_label: 'تاريخ الاستحقاق',
+      no_maturity_label: 'لا ينطبق (بدون تاريخ استحقاق)',
+      add_investment_btn: 'إضافة استثمار',
+      investments_empty: 'لا توجد استثمارات مضافة بعد',
+      investments_total: 'إجمالي المبالغ المستثمرة',
+      investment_form_title_new: 'تسجيل استثمار جديد',
+      investment_form_title_edit: 'تعديل الاستثمار',
+      err_investment_amount: 'أدخل مبلغًا صحيحًا أكبر من صفر',
+      err_investment_type: 'أدخل نوع الاستثمار',
+      th_platform: 'التطبيق / الجهة',
+      th_maturity: 'تاريخ الاستحقاق',
+      maturity_not_applicable: 'لا ينطبق',
+      confirm_delete_investment: 'هل تريد حذف هذا الاستثمار؟',
+      investments_list_title: 'الاستثمارات',
 
-      budget_title: 'Monthly Budget',
-      budget_desc: "Set a monthly budget for each item to compare it with this month's actual cash flow.",
-      th_budget: 'Budget',
-      th_actual: 'Actual',
-      no_budget_set: 'Not set',
-      over_budget: 'Over',
-      under_budget: 'Within budget',
-      calendar_title: 'Cash Flow Calendar',
-      calendar_desc: 'Daily net cash flow for this month, alongside the budget above.',
-      weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-
-      loans_title: 'Personal Loans',
-      loans_desc: 'Add your loans and their monthly installments, and log payments to track what remains on each.',
-      loan_name_label: 'Loan Name',
-      loan_name_placeholder: 'e.g. Personal Loan',
-      loan_principal_label: 'Loan Amount',
-      loan_installment_label: 'Monthly Installment',
-      loan_term_label: 'Loan Term (months)',
-      add_loan_btn: 'Add Loan',
-      loan_paid: 'Paid',
-      loan_remaining: 'Remaining',
-      loan_view_btn: 'View Payments',
-      loans_empty: 'No loans added yet',
-      back_to_loans: 'Back to Loans',
-      loan_payment_form_title_new: 'Log Payment',
-      loan_payment_form_title_edit: 'Edit Payment',
-      loan_payments_list_title: 'Payments',
-      loan_payments_empty: 'No payments logged yet',
-      loan_est_remaining_months: 'Est. months remaining',
-      err_loan_name: 'Enter the loan name',
-      err_loan_principal: 'Enter a valid loan amount greater than zero',
-      err_loan_installment: 'Enter a valid monthly installment greater than zero',
-      err_loan_term: 'Enter a valid term in months',
-      btn_log_payment: 'Log Payment',
-
-      subs_title: 'Monthly Subscriptions',
-      subs_desc: 'Track your recurring monthly subscriptions and their total monthly cost.',
-      sub_name_label: 'Subscription Name',
-      sub_name_placeholder: 'e.g. Netflix',
-      sub_amount_label: 'Monthly Amount',
-      sub_day_label: 'Billing Day of Month',
-      add_sub_btn: 'Add Subscription',
-      subs_empty: 'No subscriptions added yet',
-      subs_total: 'Total Active Monthly Subscriptions',
-      status_active: 'Active',
-      status_paused: 'Paused',
-      day_of_month_short: 'day',
-      err_sub_name: 'Enter the subscription name',
-      err_sub_amount: 'Enter a valid amount greater than zero',
-      err_sub_day: 'Enter a valid day between 1 and 31',
-
-      notif_title: 'Manage Notifications',
-      notif_desc: 'Enable or disable alert types, and review alerts currently triggered by your data.',
-      notif_settings_title: 'Alert Types',
-      notif_type_cardLimit: 'Credit card nearing its limit',
-      notif_type_subscriptionsDue: 'Subscription due soon',
-      notif_type_budgetOverage: 'Monthly budget exceeded',
-      notif_type_bankMismatch: 'Bank balance mismatch',
-      notif_active_title: 'Current Alerts',
-      notif_empty: 'No alerts right now',
-      notif_msg_card: 'You have used {pct}% of the card limit ({used} of {limit})',
-      notif_msg_sub_today: '"{name}" subscription is due today ({amount})',
-      notif_msg_sub_days: '"{name}" subscription is due in {days} day(s) ({amount})',
-      notif_msg_budget_over: '"{name}" budget exceeded by {amount}',
-      notif_msg_income_under: '"{name}" income is below budget by {amount}',
-      notif_msg_bank: 'Difference between bank balance and app balance: {amount}',
-
-      stat_bank_balance: 'Actual Bank Balance',
-      edit_bank_balance_link: 'Edit bank balance',
-      add_bank_balance_link: 'Add bank balance',
-      stat_variance: 'Difference (Bank - App)',
-      bank_not_set: 'Not entered yet',
-      bank_reconcile_note: "Compares this month's closing balance (as of today) with the actual bank balance you enter.",
-
-      export_transactions_btn: 'Export Transactions (Excel)',
-      export_report_btn: 'Export Report (Excel)',
-
-      backup_title: 'Data Backup & Restore',
-      backup_desc: 'Your data is only saved in this browser. Export a backup regularly to protect it from loss, especially if you use the app on your phone only.',
-      export_backup_btn: 'Export Backup',
-      import_backup_btn: 'Import Backup',
-      confirm_import_backup: 'This will replace all your current data with the imported backup. Continue?',
-      import_success: 'Backup imported successfully',
-      import_error: 'Invalid backup file'
-    }
+      charts_title: 'الرسوم البيانية التفاعلية',
+      charts_desc: 'مرّر أو اضغط على أي عمود أو قطاع لعرض تفاصيله.',
+      chart_trend_title: 'المداخيل والمصاريف عبر الأشهر',
+      chart_balance_title: 'اتجاه الرصيد الختامي',
+      chart_breakdown_title: 'توزيع البنود',
+      chart_empty: 'لا توجد بيانات كافية بعد لعرض الرسم البياني',
+      chart_tap_hint: 'اضغط على أي عنصر لعرض تفاصيله هنا',
+      chart_total_label: 'الإجمالي'
   };
 
-  function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || key; }
+  function t(key) { return I18N[key] || key; }
   function tf(key, vars) {
     var s = t(key);
     Object.keys(vars).forEach(function (k) { s = s.split('{' + k + '}').join(vars[k]); });
     return s;
   }
 
-  function applyDocumentLangTheme() {
-    var html = document.documentElement;
-    html.setAttribute('lang', state.lang);
-    html.setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+  function applyDocumentTitle() {
     document.title = t('brand_title');
   }
 
@@ -1112,6 +1002,55 @@
     return data && typeof data === 'object' && Array.isArray(data.categories) && Array.isArray(data.transactions);
   }
 
+  // ---------------- Chart helpers ----------------
+  var SERIES_COLORS = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9', '#e66767', '#d55181', '#d95926'];
+  function categoryColorMap(type) {
+    var map = {};
+    state.categories.filter(function (c) { return c.type === type; }).forEach(function (c, idx) {
+      map[c.id] = SERIES_COLORS[idx % SERIES_COLORS.length];
+    });
+    return map;
+  }
+  function shortMonthLabel(monthKey) {
+    var parts = monthKey.split('-').map(Number);
+    return MONTHS[parts[1] - 1].slice(0, 3);
+  }
+  function niceMax(v) {
+    if (v <= 0) return 1;
+    var pow = Math.pow(10, Math.floor(Math.log(v) / Math.LN10));
+    var n = v / pow;
+    var nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return nice * pow;
+  }
+  function topRoundedBarPath(x, y, w, h, r) {
+    if (h <= 0) return '';
+    r = Math.max(0, Math.min(r, w / 2, h));
+    var top = y, bottom = y + h;
+    return 'M' + x + ',' + bottom +
+      ' L' + x + ',' + (top + r) +
+      ' Q' + x + ',' + top + ' ' + (x + r) + ',' + top +
+      ' L' + (x + w - r) + ',' + top +
+      ' Q' + (x + w) + ',' + top + ' ' + (x + w) + ',' + (top + r) +
+      ' L' + (x + w) + ',' + bottom + ' Z';
+  }
+  function donutSegmentPath(cx, cy, rOuter, rInner, startAngle, endAngle) {
+    var gapDeg = Math.min(2, (endAngle - startAngle) * 0.06);
+    startAngle += gapDeg / 2;
+    endAngle -= gapDeg / 2;
+    if (endAngle <= startAngle) return '';
+    var largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+    function pt(r, a) {
+      var rad = (a - 90) * Math.PI / 180;
+      return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+    }
+    var p1 = pt(rOuter, startAngle), p2 = pt(rOuter, endAngle);
+    var p3 = pt(rInner, endAngle), p4 = pt(rInner, startAngle);
+    return 'M' + p1[0] + ',' + p1[1] +
+      ' A' + rOuter + ',' + rOuter + ' 0 ' + largeArc + ' 1 ' + p2[0] + ',' + p2[1] +
+      ' L' + p3[0] + ',' + p3[1] +
+      ' A' + rInner + ',' + rInner + ' 0 ' + largeArc + ' 0 ' + p4[0] + ',' + p4[1] + ' Z';
+  }
+
   // ---------------- App state ----------------
   var state = loadState();
   var currentTab = 'summary';
@@ -1132,11 +1071,15 @@
 
   var editingBankBalance = false;
   var editingSubId = null;
+  var editingInvestmentId = null;
+
+  var chartBreakdownType = 'expense';
+  var chartActive = {};
 
   var app = document.getElementById('app');
 
   function render() {
-    applyDocumentLangTheme();
+    applyDocumentTitle();
     if (state.openingBalance === null) {
       app.innerHTML = renderGate();
       return;
@@ -1172,6 +1115,8 @@
       { key: 'cards', label: t('tab_cards') },
       { key: 'loans', label: t('tab_loans') },
       { key: 'subscriptions', label: t('tab_subscriptions') },
+      { key: 'investments', label: t('tab_investments') },
+      { key: 'charts', label: t('tab_charts') },
       { key: 'notifications', label: t('tab_notifications') },
       { key: 'categories', label: t('tab_categories') }
     ];
@@ -1179,7 +1124,7 @@
       return '<button class="tab' + (currentTab === tb.key ? ' active' : '') + '" data-action="tab" data-tab="' + tb.key + '">' + tb.label + '</button>';
     }).join('');
 
-    var showMonthNav = currentTab === 'summary' || currentTab === 'transactions' || currentTab === 'budget';
+    var showMonthNav = currentTab === 'summary' || currentTab === 'transactions' || currentTab === 'budget' || currentTab === 'charts';
     var monthNavRow = showMonthNav
       ? '<div class="month-nav-row"><div class="month-nav">' +
         '<button data-action="prev-month">' + t('month_prev') + '</button>' +
@@ -1190,10 +1135,7 @@
 
     return (
       '<header class="top"><div class="inner">' +
-      '<div class="row1"><h1>' + t('brand_title') + '</h1>' +
-      '<div class="controls">' +
-      '<button class="lang-toggle" data-action="toggle-lang">' + t('lang_toggle') + '</button>' +
-      '</div></div>' +
+      '<div class="row1"><h1>' + t('brand_title') + '</h1></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       monthNavRow +
       '</div></header>'
@@ -1208,6 +1150,8 @@
     if (currentTab === 'cards') return renderCards();
     if (currentTab === 'loans') return renderLoans();
     if (currentTab === 'subscriptions') return renderSubscriptions();
+    if (currentTab === 'investments') return renderInvestments();
+    if (currentTab === 'charts') return renderCharts();
     if (currentTab === 'notifications') return renderNotifications();
     if (currentTab === 'categories') return renderCategories();
     return '';
@@ -1293,7 +1237,7 @@
       statTile(t('stat_expense'), s.totalExpense, 'negative') +
       statTile(t('stat_closing'), s.closingBalance, closingCls) +
       '</div>' +
-      '<div class="grid-2" style="margin-bottom:14px;">' + bankTile + '</div>' +
+      '<div class="stat-grid" style="margin-bottom:14px;">' + bankTile + '</div>' +
       '<div class="grid-2">' +
       breakdown(t('breakdown_income_title'), s.incomeByCategory, 'income') +
       breakdown(t('breakdown_expense_title'), s.expenseByCategory, 'expense') +
@@ -1623,7 +1567,7 @@
     var available = card.limit - balance;
 
     var header = (
-      '<button class="card-back-btn" data-action="back-to-cards">' + (state.lang === 'ar' ? '→' : '←') + ' ' + t('back_to_cards') + '</button>' +
+      '<button class="card-back-btn" data-action="back-to-cards">→ ' + t('back_to_cards') + '</button>' +
       '<div class="card-detail-header"><div><h2>' + escapeHtml(card.name) + '</h2>' +
       '<div class="sub">' + t('card_limit_label') + ': ' + formatCurrency(card.limit) + '</div></div></div>' +
       '<div class="grid-3">' +
@@ -1785,7 +1729,7 @@
     var estMonths = loan.monthlyInstallment > 0 ? Math.ceil(remaining / loan.monthlyInstallment) : 0;
 
     var header = (
-      '<button class="card-back-btn" data-action="back-to-loans">' + (state.lang === 'ar' ? '→' : '←') + ' ' + t('back_to_loans') + '</button>' +
+      '<button class="card-back-btn" data-action="back-to-loans">→ ' + t('back_to_loans') + '</button>' +
       '<div class="card-detail-header"><div><h2>' + escapeHtml(loan.name) + '</h2>' +
       '<div class="sub">' + t('loan_installment_label') + ': ' + formatCurrency(loan.monthlyInstallment) + ' · ' + t('loan_term_label') + ': ' + loan.termMonths + '</div></div></div>' +
       '<div class="grid-4">' +
@@ -1964,6 +1908,292 @@
       alertsHtml + '</div>' +
       '</div>' +
       backupCard
+    );
+  }
+
+  // ---------------- Investments tab ----------------
+  function renderInvestments() {
+    var total = state.investments.reduce(function (sum, i) { return sum + i.amount; }, 0);
+    return (
+      '<h2 class="section-title">' + t('investments_title') + '</h2>' +
+      '<p class="section-desc">' + t('investments_desc') + '</p>' +
+      '<div class="card stat-tile" style="margin-bottom:16px;max-width:280px;"><div class="k">' + t('investments_total') + '</div><div class="v positive">' + formatCurrency(total) + '</div></div>' +
+      '<div class="tx-layout">' + renderInvestmentForm() + renderInvestmentList() + '</div>'
+    );
+  }
+
+  function renderInvestmentForm() {
+    var editingInv = editingInvestmentId ? state.investments.find(function (i) { return i.id === editingInvestmentId; }) : null;
+    var type = editingInv ? editingInv.type : '';
+    var platform = editingInv ? editingInv.platform : '';
+    var amount = editingInv ? editingInv.amount : '';
+    var maturity = editingInv ? editingInv.maturityDate : null;
+    var noMaturity = editingInv ? !editingInv.maturityDate : false;
+
+    return (
+      '<form id="investment-form" class="card">' +
+      '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingInv ? t('investment_form_title_edit') : t('investment_form_title_new')) + '</h3>' +
+      '<div class="field"><label>' + t('investment_type_label') + '</label><input type="text" id="inv-type" placeholder="' + t('investment_type_placeholder') + '" value="' + escapeAttr(type) + '"></div>' +
+      '<div class="field"><label>' + t('investment_platform_label') + '</label><input type="text" id="inv-platform" placeholder="' + t('investment_platform_placeholder') + '" value="' + escapeAttr(platform) + '"></div>' +
+      '<div class="field"><label>' + t('investment_amount_label') + '</label><input type="number" step="0.01" id="inv-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('investment_maturity_label') + '</label>' +
+      '<input type="date" id="inv-maturity" value="' + (maturity || '') + '"' + (noMaturity ? ' disabled' : '') + '>' +
+      '<label class="no-maturity-row"><input type="checkbox" id="inv-no-maturity"' + (noMaturity ? ' checked' : '') + '> ' + t('no_maturity_label') + '</label>' +
+      '</div>' +
+      '<div id="inv-err" class="err"></div>' +
+      '<div class="btn-row">' +
+      '<button type="submit" class="btn-primary">' + (editingInv ? t('btn_save_edit') : t('add_investment_btn')) + '</button>' +
+      (editingInv ? '<button type="button" class="btn-ghost" data-action="cancel-edit-investment">' + t('cancel') + '</button>' : '') +
+      '</div>' +
+      '</form>'
+    );
+  }
+
+  function renderInvestmentList() {
+    var items = state.investments;
+    var body;
+    if (items.length === 0) {
+      body = '<div class="list-empty">' + t('investments_empty') + '</div>';
+    } else {
+      var rows = items.map(function (i) {
+        return (
+          '<tr>' +
+          '<td>' + escapeHtml(i.type) + '</td>' +
+          '<td>' + (i.platform ? escapeHtml(i.platform) : '—') + '</td>' +
+          '<td class="amt mono income">' + formatCurrency(i.amount) + '</td>' +
+          '<td>' + (i.maturityDate ? i.maturityDate : t('maturity_not_applicable')) + '</td>' +
+          '<td class="actions">' +
+          '<button class="icon-btn" data-action="edit-investment" data-id="' + i.id + '" title="edit">✏️</button>' +
+          '<button class="icon-btn danger" data-action="delete-investment" data-id="' + i.id + '" title="delete">🗑️</button>' +
+          '</td></tr>'
+        );
+      }).join('');
+      body = (
+        '<div class="table-scroll"><table><thead><tr>' +
+        '<th>' + t('investment_type_label') + '</th><th>' + t('th_platform') + '</th><th class="amt">' + t('th_amount') + '</th><th>' + t('th_maturity') + '</th><th></th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+      );
+    }
+    return (
+      '<div class="card list-card">' +
+      '<div class="head">' + t('investments_list_title') + ' (' + items.length + ')</div>' +
+      body +
+      '</div>'
+    );
+  }
+
+  // ---------------- Charts tab ----------------
+  var INCOME_COLOR = '#34D399';
+  var EXPENSE_COLOR = '#FB7185';
+  var TREND_LINE_COLOR = '#3987e5';
+
+  function renderCharts() {
+    return (
+      '<h2 class="section-title">' + t('charts_title') + '</h2>' +
+      '<p class="section-desc">' + t('charts_desc') + '</p>' +
+      renderTrendBarChart() +
+      renderBalanceLineChart() +
+      renderCategoryDonutChart()
+    );
+  }
+
+  function renderTrendBarChart() {
+    var monthKeys = getReportMonthKeys().slice().reverse();
+    if (monthKeys.length > 6) monthKeys = monthKeys.slice(monthKeys.length - 6);
+    if (monthKeys.length === 0) {
+      return '<div class="card chart-card"><h3>' + t('chart_trend_title') + '</h3><p class="empty">' + t('chart_empty') + '</p></div>';
+    }
+    var rows = monthKeys.map(function (mk) { return computeMonthSummary(mk); });
+    var maxRaw = 1;
+    rows.forEach(function (r) { maxRaw = Math.max(maxRaw, r.totalIncome, r.totalExpense); });
+    var maxVal = niceMax(maxRaw);
+
+    var W = 640, H = 220, padL = 8, padR = 8, padT = 10, padB = 24;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var groupW = plotW / rows.length;
+    var barW = Math.max(10, Math.min(24, groupW * 0.3));
+    var gap = 5;
+
+    var gridlines = '';
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g / 4);
+      gridlines += '<line class="gridline" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + gy + '" y2="' + gy + '"></line>';
+    }
+
+    var marks = '', labels = '';
+    var anyActive = !!chartActive.trend;
+    rows.forEach(function (r) {
+      var idx = rows.indexOf(r);
+      var cx = padL + idx * groupW + groupW / 2;
+      var incH = (r.totalIncome / maxVal) * plotH;
+      var expH = (r.totalExpense / maxVal) * plotH;
+      var incX = cx - gap / 2 - barW;
+      var expX = cx + gap / 2;
+      var incY = padT + plotH - incH;
+      var expY = padT + plotH - expH;
+      var incKey = 'inc-' + r.monthKey, expKey = 'exp-' + r.monthKey;
+      var incCls = chartActive.trend === incKey ? 'active' : (anyActive ? 'dim' : '');
+      var expCls = chartActive.trend === expKey ? 'active' : (anyActive ? 'dim' : '');
+      marks += '<path class="mark ' + incCls + '" data-action="chart-mark" data-chart="trend" data-key="' + incKey + '" d="' + topRoundedBarPath(incX, incY, barW, incH, 4) + '" fill="' + INCOME_COLOR + '"><title>' + escapeHtml(t('type_income') + ' — ' + formatMonthLabel(r.monthKey) + ': ' + formatCurrency(r.totalIncome)) + '</title></path>';
+      marks += '<path class="mark ' + expCls + '" data-action="chart-mark" data-chart="trend" data-key="' + expKey + '" d="' + topRoundedBarPath(expX, expY, barW, expH, 4) + '" fill="' + EXPENSE_COLOR + '"><title>' + escapeHtml(t('type_expense') + ' — ' + formatMonthLabel(r.monthKey) + ': ' + formatCurrency(r.totalExpense)) + '</title></path>';
+      labels += '<text class="axis-label" x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + shortMonthLabel(r.monthKey) + '</text>';
+    });
+
+    var activeKey = chartActive.trend;
+    var detailHtml = t('chart_tap_hint');
+    if (activeKey) {
+      var isIncome = activeKey.indexOf('inc-') === 0;
+      var mkKey = activeKey.slice(4);
+      var matchRow = rows.filter(function (r) { return r.monthKey === mkKey; })[0];
+      if (matchRow) {
+        var lbl = (isIncome ? t('type_income') : t('type_expense')) + ' — ' + formatMonthLabel(matchRow.monthKey);
+        var val = isIncome ? matchRow.totalIncome : matchRow.totalExpense;
+        detailHtml = escapeHtml(lbl) + ': <span class="val">' + formatCurrency(val) + '</span>';
+      }
+    }
+
+    return (
+      '<div class="card chart-card">' +
+      '<h3>' + t('chart_trend_title') + '</h3>' +
+      '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
+      gridlines + marks + labels +
+      '</svg>' +
+      '<div class="chart-legend">' +
+      '<span class="item"><span class="swatch" style="background:' + INCOME_COLOR + '"></span>' + t('type_income') + '</span>' +
+      '<span class="item"><span class="swatch" style="background:' + EXPENSE_COLOR + '"></span>' + t('type_expense') + '</span>' +
+      '</div>' +
+      '<div class="chart-detail">' + detailHtml + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderBalanceLineChart() {
+    var monthKeys = getReportMonthKeys().slice().reverse();
+    if (monthKeys.length > 12) monthKeys = monthKeys.slice(monthKeys.length - 12);
+    if (monthKeys.length === 0) {
+      return '<div class="card chart-card"><h3>' + t('chart_balance_title') + '</h3><p class="empty">' + t('chart_empty') + '</p></div>';
+    }
+    var rows = monthKeys.map(function (mk) { return computeMonthSummary(mk); });
+    var values = rows.map(function (r) { return r.closingBalance; });
+    var minVal = Math.min.apply(null, values.concat([0]));
+    var maxVal = Math.max.apply(null, values.concat([0]));
+    if (minVal === maxVal) maxVal = minVal + 1;
+    var range = maxVal - minVal;
+    var padVal = range * 0.15 || 1;
+    var scaleMin = minVal - padVal, scaleMax = maxVal + padVal;
+
+    var W = 640, H = 200, padL = 8, padR = 8, padT = 14, padB = 24;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var stepX = rows.length > 1 ? plotW / (rows.length - 1) : 0;
+    function yFor(v) { return padT + plotH - ((v - scaleMin) / (scaleMax - scaleMin)) * plotH; }
+
+    var points = rows.map(function (r, idx) { return [padL + idx * stepX, yFor(r.closingBalance)]; });
+    var linePath = points.map(function (p, idx) { return (idx === 0 ? 'M' : 'L') + p[0] + ',' + p[1]; }).join(' ');
+    var areaPath = linePath + ' L' + points[points.length - 1][0] + ',' + (padT + plotH) + ' L' + points[0][0] + ',' + (padT + plotH) + ' Z';
+
+    var zeroLine = '';
+    if (scaleMin < 0 && scaleMax > 0) {
+      var zy = yFor(0);
+      zeroLine = '<line class="gridline" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + zy + '" y2="' + zy + '"></line>';
+    }
+
+    var marksHtml = '', labels = '';
+    var anyActive = !!chartActive.balance;
+    var labelEvery = Math.max(1, Math.ceil(rows.length / 6));
+    rows.forEach(function (r, idx) {
+      var p = points[idx];
+      var cls = chartActive.balance === r.monthKey ? 'active' : (anyActive ? 'dim' : '');
+      marksHtml += '<circle class="mark ' + cls + '" data-action="chart-mark" data-chart="balance" data-key="' + r.monthKey + '" cx="' + p[0] + '" cy="' + p[1] + '" r="12" fill="transparent"><title>' + escapeHtml(formatMonthLabel(r.monthKey) + ': ' + formatCurrency(r.closingBalance)) + '</title></circle>';
+      marksHtml += '<circle class="dot" cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + TREND_LINE_COLOR + '" stroke="#132238" stroke-width="2" pointer-events="none"></circle>';
+      if (idx % labelEvery === 0 || idx === rows.length - 1) {
+        labels += '<text class="axis-label" x="' + p[0] + '" y="' + (H - 6) + '" text-anchor="middle">' + shortMonthLabel(r.monthKey) + '</text>';
+      }
+    });
+
+    var detailHtml = t('chart_tap_hint');
+    if (chartActive.balance) {
+      var matchRow2 = rows.filter(function (r) { return r.monthKey === chartActive.balance; })[0];
+      if (matchRow2) detailHtml = escapeHtml(formatMonthLabel(matchRow2.monthKey)) + ': <span class="val">' + formatCurrency(matchRow2.closingBalance) + '</span>';
+    }
+
+    return (
+      '<div class="card chart-card">' +
+      '<h3>' + t('chart_balance_title') + '</h3>' +
+      '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
+      '<path d="' + areaPath + '" fill="' + TREND_LINE_COLOR + '" fill-opacity="0.1" stroke="none"></path>' +
+      zeroLine +
+      '<path d="' + linePath + '" fill="none" stroke="' + TREND_LINE_COLOR + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>' +
+      marksHtml + labels +
+      '</svg>' +
+      '<div class="chart-detail">' + detailHtml + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderCategoryDonutChart() {
+    var summary = computeMonthSummary(currentMonth);
+    var type = chartBreakdownType;
+    var items = type === 'income' ? summary.incomeByCategory : summary.expenseByCategory;
+    var total = type === 'income' ? summary.totalIncome : summary.totalExpense;
+    var colorMap = categoryColorMap(type);
+
+    var toggleHtml = (
+      '<div class="chart-toggle">' +
+      '<button type="button" class="type-btn' + (type === 'expense' ? ' active-expense' : '') + '" data-action="chart-toggle-breakdown" data-type="expense">' + t('type_expense') + '</button>' +
+      '<button type="button" class="type-btn' + (type === 'income' ? ' active-income' : '') + '" data-action="chart-toggle-breakdown" data-type="income">' + t('type_income') + '</button>' +
+      '</div>'
+    );
+
+    if (items.length === 0 || total <= 0) {
+      return (
+        '<div class="card chart-card">' +
+        '<h3>' + t('chart_breakdown_title') + '</h3><p class="sub">' + formatMonthLabel(currentMonth) + '</p>' +
+        toggleHtml +
+        '<p class="empty">' + t('chart_empty') + '</p>' +
+        '</div>'
+      );
+    }
+
+    var cx = 110, cy = 110, rOuter = 100, rInner = 62;
+    var cumulative = 0;
+    var segs = '', legendHtml = '';
+    var anyActive = !!chartActive.donut;
+    items.forEach(function (it) {
+      var frac = it.total / total;
+      var startAngle = cumulative * 360;
+      cumulative += frac;
+      var endAngle = cumulative * 360;
+      var color = colorMap[it.category.id] || '#93A2B8';
+      var key = it.category.id;
+      var isActive = chartActive.donut === key;
+      var cls = isActive ? 'active' : (anyActive ? 'dim' : '');
+      var pct = Math.round(frac * 100);
+      segs += '<path class="mark ' + cls + '" data-action="chart-mark" data-chart="donut" data-key="' + key + '" d="' + donutSegmentPath(cx, cy, rOuter, rInner, startAngle, endAngle) + '" fill="' + color + '"><title>' + escapeHtml(it.category.name + ': ' + formatCurrency(it.total) + ' (' + pct + '%)') + '</title></path>';
+      legendHtml += '<span class="item' + (anyActive && !isActive ? ' dim' : '') + '" data-action="chart-mark" data-chart="donut" data-key="' + key + '"><span class="swatch" style="background:' + color + '"></span>' + escapeHtml(it.category.name) + ' · ' + pct + '%</span>';
+    });
+
+    var centerLbl = t('chart_total_label');
+    var centerVal = formatCurrency(total);
+    var detailHtml = t('chart_tap_hint');
+    if (chartActive.donut) {
+      var activeItem = items.filter(function (it) { return it.category.id === chartActive.donut; })[0];
+      if (activeItem) {
+        centerLbl = activeItem.category.name;
+        centerVal = formatCurrency(activeItem.total);
+        detailHtml = escapeHtml(activeItem.category.name) + ': <span class="val">' + formatCurrency(activeItem.total) + '</span>';
+      }
+    }
+
+    return (
+      '<div class="card chart-card">' +
+      '<h3>' + t('chart_breakdown_title') + '</h3><p class="sub">' + formatMonthLabel(currentMonth) + '</p>' +
+      toggleHtml +
+      '<div class="donut-wrap"><svg class="chart-svg" viewBox="0 0 220 220">' + segs + '</svg>' +
+      '<div class="donut-center"><div class="lbl">' + escapeHtml(centerLbl) + '</div><div class="val">' + centerVal + '</div></div>' +
+      '</div>' +
+      '<div class="chart-legend">' + legendHtml + '</div>' +
+      '<div class="chart-detail">' + detailHtml + '</div>' +
+      '</div>'
     );
   }
 
@@ -2156,6 +2386,38 @@
       render();
       return;
     }
+
+    if (form.id === 'investment-form') {
+      e.preventDefault();
+      var invType = document.getElementById('inv-type').value.trim();
+      var invPlatform = document.getElementById('inv-platform').value.trim();
+      var invAmount = parseFloat(document.getElementById('inv-amount').value);
+      var invNoMaturity = document.getElementById('inv-no-maturity').checked;
+      var invMaturityRaw = document.getElementById('inv-maturity').value;
+      var invErrEl = document.getElementById('inv-err');
+      if (!invType) { invErrEl.textContent = t('err_investment_type'); return; }
+      if (isNaN(invAmount) || invAmount <= 0) { invErrEl.textContent = t('err_investment_amount'); return; }
+
+      var invPayload = {
+        type: invType,
+        platform: invPlatform || undefined,
+        amount: invAmount,
+        maturityDate: (invNoMaturity || !invMaturityRaw) ? null : invMaturityRaw
+      };
+
+      if (editingInvestmentId) {
+        state.investments = state.investments.map(function (i) {
+          return i.id === editingInvestmentId ? Object.assign({ id: i.id }, invPayload) : i;
+        });
+        editingInvestmentId = null;
+      } else {
+        invPayload.id = uid();
+        state.investments.push(invPayload);
+      }
+      saveState();
+      render();
+      return;
+    }
   });
 
   app.addEventListener('change', function (e) {
@@ -2175,6 +2437,12 @@
       state.notificationSettings[el.dataset.key] = el.checked;
       saveState();
       render();
+      return;
+    }
+    if (el.id === 'inv-no-maturity') {
+      var maturityInput = document.getElementById('inv-maturity');
+      maturityInput.disabled = el.checked;
+      if (el.checked) maturityInput.value = '';
       return;
     }
     if (el.id === 'backup-file-input') {
@@ -2205,11 +2473,11 @@
           loans: parsed.loans || [],
           loanPayments: parsed.loanPayments || [],
           subscriptions: parsed.subscriptions || [],
+          investments: parsed.investments || [],
           budgets: parsed.budgets || {},
           bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
           bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
-          notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
-          lang: parsed.lang || state.lang
+          notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
         };
         saveState();
         alert(t('import_success'));
@@ -2239,13 +2507,14 @@
       editingLoanPaymentId = null;
       editingBankBalance = false;
       editingSubId = null;
+      editingInvestmentId = null;
+      chartActive = {};
       render();
       return;
     }
     if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); render(); return; }
     if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); render(); return; }
 
-    if (action === 'toggle-lang') { state.lang = state.lang === 'ar' ? 'en' : 'ar'; saveState(); render(); return; }
 
     if (action === 'edit-opening') { editingOpeningBalance = true; render(); return; }
     if (action === 'cancel-edit-opening') { editingOpeningBalance = false; render(); return; }
@@ -2289,9 +2558,7 @@
       return;
     }
     if (action === 'delete-cat') {
-      var catMsg = state.lang === 'ar'
-        ? ('هل تريد حذف "' + btn.dataset.name + '"؟ سيتم حذف كل العمليات المرتبطة به.')
-        : ('Delete "' + btn.dataset.name + '"? All related transactions will be deleted too.');
+      var catMsg = 'هل تريد حذف "' + btn.dataset.name + '"؟ سيتم حذف كل العمليات المرتبطة به.';
       if (confirm(catMsg)) {
         var id = btn.dataset.id;
         state.categories = state.categories.filter(function (c) { return c.id !== id; });
@@ -2320,9 +2587,7 @@
       return;
     }
     if (action === 'delete-card') {
-      var msg = state.lang === 'ar'
-        ? ('هل تريد حذف بطاقة "' + btn.dataset.name + '"؟ سيتم حذف كل عملياتها.')
-        : ('Delete card "' + btn.dataset.name + '"? All its transactions will be deleted too.');
+      var msg = 'هل تريد حذف بطاقة "' + btn.dataset.name + '"؟ سيتم حذف كل عملياتها.';
       if (confirm(msg)) {
         var delId = btn.dataset.id;
         state.creditCards = state.creditCards.filter(function (c) { return c.id !== delId; });
@@ -2407,9 +2672,7 @@
       return;
     }
     if (action === 'delete-loan') {
-      var loanMsg = state.lang === 'ar'
-        ? ('هل تريد حذف قرض "' + btn.dataset.name + '"؟ سيتم حذف كل دفعاته.')
-        : ('Delete loan "' + btn.dataset.name + '"? All its payments will be deleted too.');
+      var loanMsg = 'هل تريد حذف قرض "' + btn.dataset.name + '"؟ سيتم حذف كل دفعاته.';
       if (confirm(loanMsg)) {
         var delLoanId = btn.dataset.id;
         state.loans = state.loans.filter(function (l) { return l.id !== delLoanId; });
@@ -2455,13 +2718,41 @@
       return;
     }
     if (action === 'delete-sub') {
-      var subMsg = state.lang === 'ar' ? ('هل تريد حذف اشتراك "' + btn.dataset.name + '"؟') : ('Delete subscription "' + btn.dataset.name + '"?');
+      var subMsg = 'هل تريد حذف اشتراك "' + btn.dataset.name + '"؟';
       if (confirm(subMsg)) {
         var delSubId = btn.dataset.id;
         state.subscriptions = state.subscriptions.filter(function (s) { return s.id !== delSubId; });
         saveState();
         render();
       }
+      return;
+    }
+
+    // ----- Investments -----
+    if (action === 'edit-investment') { editingInvestmentId = btn.dataset.id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (action === 'cancel-edit-investment') { editingInvestmentId = null; render(); return; }
+    if (action === 'delete-investment') {
+      if (confirm(t('confirm_delete_investment'))) {
+        var delInvId = btn.dataset.id;
+        state.investments = state.investments.filter(function (i) { return i.id !== delInvId; });
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    // ----- Charts -----
+    if (action === 'chart-toggle-breakdown') {
+      chartBreakdownType = btn.dataset.type;
+      chartActive.donut = null;
+      render();
+      return;
+    }
+    if (action === 'chart-mark') {
+      var chartId = btn.dataset.chart;
+      var key = btn.dataset.key;
+      chartActive[chartId] = (chartActive[chartId] === key) ? null : key;
+      render();
       return;
     }
   });
