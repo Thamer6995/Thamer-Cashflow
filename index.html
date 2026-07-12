@@ -525,12 +525,23 @@
   }
   .qa-close:hover{ color:var(--ink); }
 
-  .qa-amount-field{ margin-bottom:14px; }
+  .qa-amount-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .qa-amount-field{ flex:1; min-width:0; }
   .qa-amount-field input{
     width:100%; font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; text-align:center;
     font-size:34px; font-weight:700; background:transparent; border:none; color:var(--ink); outline:none; padding:6px 0;
   }
   .qa-amount-field input::placeholder{ color:var(--slate-soft); }
+
+  .qa-inline-save{
+    flex-shrink:0; width:52px; height:52px; border-radius:50%;
+    appearance:none; border:none; background:var(--success); color:#08150F;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 14px rgba(52,211,153,.35);
+  }
+  .qa-inline-save.expense-mode{ background:var(--danger); color:#2B0710; box-shadow:0 4px 14px rgba(251,113,133,.35); }
+  .qa-inline-save:active{ transform:scale(.94); }
+  .qa-inline-save svg{ width:24px; height:24px; }
 
   .qa-save{
     width:100%; appearance:none; border:none; border-radius:12px; background:var(--success); color:#08150F;
@@ -1222,7 +1233,12 @@
       '<button type="button" class="type-btn' + (quickAddType === 'income' ? ' active-income' : '') + '" data-action="qa-set-type" data-type="income">' + t('type_income') + '</button>' +
       '<button type="button" class="type-btn' + (quickAddType === 'expense' ? ' active-expense' : '') + '" data-action="qa-set-type" data-type="expense">' + t('type_expense') + '</button>' +
       '</div>' +
+      '<div class="qa-amount-row">' +
       '<div class="qa-amount-field"><input type="number" step="0.01" inputmode="decimal" id="qa-amount" placeholder="0.00"></div>' +
+      '<button type="submit" class="qa-inline-save ' + saveCls + '" title="' + t('btn_add_tx') + '" aria-label="' + t('btn_add_tx') + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"></polyline></svg>' +
+      '</button>' +
+      '</div>' +
       '<div class="field"><label>' + t('field_category') + '</label><select id="qa-category">' + catOptions + '</select>' + catWarning + '</div>' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="qa-date" value="' + todayStr() + '"></div>' +
