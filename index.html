@@ -140,7 +140,7 @@
   .tab:hover{ color:var(--ink); }
   .tab.active{ color:var(--success); border-bottom-color:var(--success); }
 
-  main.content{ max-width:1100px; margin:0 auto; padding:0 20px; }
+  main.content{ max-width:1100px; margin:0 auto; padding:0 20px calc(96px + var(--safe-b)); }
 
   /* ---------- Cards / generic ---------- */
   .card{
@@ -473,6 +473,81 @@
   .donut-center .lbl{ font-size:10.5px; color:var(--slate); margin-bottom:3px; }
   .donut-center .val{ font-size:15px; font-weight:700; color:var(--ink); font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; unicode-bidi:plaintext; }
 
+  /* ---------- Quick Add ---------- */
+  .fab{
+    position:fixed;
+    right:calc(20px + var(--safe-r));
+    bottom:calc(20px + var(--safe-b));
+    width:58px; height:58px;
+    border-radius:50%;
+    background:var(--success);
+    color:#08150F;
+    border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    box-shadow:0 6px 20px rgba(52,211,153,.4), 0 2px 6px rgba(0,0,0,.3);
+    z-index:40;
+    transition:transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+  }
+  .fab:hover{ box-shadow:0 8px 26px rgba(52,211,153,.5), 0 2px 6px rgba(0,0,0,.3); }
+  .fab:active{ transform:scale(.94); }
+  .fab.hidden{ opacity:0; transform:scale(.5); pointer-events:none; }
+  .fab svg{ width:24px; height:24px; }
+
+  .qa-backdrop{
+    position:fixed; inset:0; background:rgba(4,8,14,.6);
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    z-index:50;
+  }
+  .qa-backdrop.open{ opacity:1; pointer-events:auto; }
+
+  .qa-sheet{
+    position:fixed; left:0; right:0; bottom:0;
+    max-width:1100px; margin:0 auto;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-bottom:none;
+    border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 30px rgba(0,0,0,.4);
+    padding:10px 20px calc(20px + var(--safe-b));
+    transform:translateY(105%);
+    transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    z-index:51;
+  }
+  .qa-sheet.open{ transform:translateY(0); }
+  .qa-handle{ width:36px; height:4px; background:var(--line); border-radius:3px; margin:0 auto 14px; }
+  .qa-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .qa-head h2{ font-size:16px; font-weight:700; margin:0; }
+  .qa-close{
+    appearance:none; border:none; background:var(--card-alt); color:var(--slate);
+    width:30px; height:30px; border-radius:50%; font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qa-close:hover{ color:var(--ink); }
+
+  .qa-amount-field{ margin-bottom:14px; }
+  .qa-amount-field input{
+    width:100%; font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; text-align:center;
+    font-size:34px; font-weight:700; background:transparent; border:none; color:var(--ink); outline:none; padding:6px 0;
+  }
+  .qa-amount-field input::placeholder{ color:var(--slate-soft); }
+
+  .qa-save{
+    width:100%; appearance:none; border:none; border-radius:12px; background:var(--success); color:#08150F;
+    font-family:inherit; font-weight:700; font-size:15.5px; padding:15px; cursor:pointer; margin-top:6px;
+  }
+  .qa-save.expense-mode{ background:var(--danger); color:#2B0710; }
+  .qa-save:active{ transform:scale(.99); }
+
+  .qa-toast{
+    position:fixed; bottom:calc(96px + var(--safe-b)); left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--paper); font-size:13.5px; font-weight:600; padding:10px 18px; border-radius:10px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:60; white-space:nowrap;
+  }
+  .qa-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (max-width:420px){ .fab{ width:52px; height:52px; right:calc(16px + var(--safe-r)); bottom:calc(16px + var(--safe-b)); } }
+
   /* ---------- Mobile / iPhone polish ---------- */
   @media (max-width:640px){
     input, select, textarea{ font-size:16px !important; }
@@ -628,6 +703,9 @@
       filter_all_categories: 'كل البنود',
       clear_filters: 'مسح الفلاتر',
       tx_search_empty: 'لا توجد نتائج مطابقة',
+      quick_add_fab_label: 'إضافة سريعة',
+      quick_add_title: 'إضافة سريعة',
+      quick_add_saved_toast: '✓ تمت إضافة العملية',
       th_date: 'التاريخ',
       th_category: 'البند',
       th_note: 'ملاحظة',
@@ -1103,6 +1181,9 @@
   var txFilterCategoryId = '';
   var txFilterType = '';
 
+  var quickAddOpen = false;
+  var quickAddType = 'income';
+
   var chartBreakdownType = 'expense';
   var chartActive = {};
 
@@ -1114,7 +1195,43 @@
       app.innerHTML = renderGate();
       return;
     }
-    app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>';
+    app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>' + renderQuickAdd();
+  }
+
+  function renderQuickAdd() {
+    var cats = state.categories.filter(function (c) { return c.type === quickAddType; });
+    var catOptions = '<option value="">' + t('field_category_placeholder') + '</option>' + cats.map(function (c) {
+      return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    }).join('');
+    var catWarning = cats.length === 0 ? '<p class="warn-text">' + t('no_categories_warning') + '</p>' : '';
+    var saveCls = quickAddType === 'expense' ? 'expense-mode' : '';
+
+    return (
+      '<div id="qa-root">' +
+      '<button class="fab' + (quickAddOpen ? ' hidden' : '') + '" id="qa-fab" data-action="qa-open" title="' + t('quick_add_fab_label') + '" aria-label="' + t('quick_add_fab_label') + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>' +
+      '</button>' +
+      '<div class="qa-backdrop' + (quickAddOpen ? ' open' : '') + '" data-action="qa-close"></div>' +
+      '<form class="qa-sheet' + (quickAddOpen ? ' open' : '') + '" id="qa-sheet" role="dialog" aria-modal="true" aria-label="' + t('quick_add_title') + '">' +
+      '<div class="qa-handle"></div>' +
+      '<div class="qa-head"><h2>' + t('quick_add_title') + '</h2>' +
+      '<button type="button" class="qa-close" data-action="qa-close">✕</button></div>' +
+      '<div class="type-toggle">' +
+      '<button type="button" class="type-btn' + (quickAddType === 'income' ? ' active-income' : '') + '" data-action="qa-set-type" data-type="income">' + t('type_income') + '</button>' +
+      '<button type="button" class="type-btn' + (quickAddType === 'expense' ? ' active-expense' : '') + '" data-action="qa-set-type" data-type="expense">' + t('type_expense') + '</button>' +
+      '</div>' +
+      '<div class="qa-amount-field"><input type="number" step="0.01" inputmode="decimal" id="qa-amount" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('field_category') + '</label><select id="qa-category">' + catOptions + '</select>' + catWarning + '</div>' +
+      '<div class="grid-2">' +
+      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="qa-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="qa-note"></div>' +
+      '</div>' +
+      '<div id="qa-err" class="err"></div>' +
+      '<button type="submit" class="qa-save ' + saveCls + '">' + t('btn_add_tx') + '</button>' +
+      '</form>' +
+      '<div class="qa-toast" id="qa-toast">' + t('quick_add_saved_toast') + '</div>' +
+      '</div>'
+    );
   }
 
   function renderGate() {
@@ -2281,6 +2398,33 @@
   app.addEventListener('submit', function (e) {
     var form = e.target;
 
+    if (form.id === 'qa-sheet') {
+      e.preventDefault();
+      var qaAmount = parseFloat(document.getElementById('qa-amount').value);
+      var qaCategoryId = document.getElementById('qa-category').value;
+      var qaDate = document.getElementById('qa-date').value;
+      var qaNote = document.getElementById('qa-note').value.trim();
+      var qaErrEl = document.getElementById('qa-err');
+
+      if (!qaCategoryId) { qaErrEl.textContent = t('err_select_category'); return; }
+      if (isNaN(qaAmount) || qaAmount <= 0) { qaErrEl.textContent = t('err_amount'); return; }
+
+      state.transactions.push({
+        id: uid(), date: qaDate || todayStr(), categoryId: qaCategoryId,
+        type: quickAddType, amount: qaAmount, note: qaNote || undefined
+      });
+      saveState();
+      quickAddOpen = false;
+      quickAddType = 'income';
+      render();
+      var toastEl = document.getElementById('qa-toast');
+      if (toastEl) {
+        toastEl.classList.add('show');
+        setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+      }
+      return;
+    }
+
     if (form.id === 'setup-form') {
       e.preventDefault();
       var amountEl = document.getElementById('setup-amount');
@@ -2589,6 +2733,33 @@
     if (!btn) return;
     var action = btn.dataset.action;
 
+    if (action === 'qa-open') {
+      quickAddOpen = true;
+      render();
+      var qaAmt = document.getElementById('qa-amount');
+      if (qaAmt) qaAmt.focus();
+      return;
+    }
+    if (action === 'qa-close') {
+      quickAddOpen = false;
+      render();
+      return;
+    }
+    if (action === 'qa-set-type') {
+      var qaNewType = btn.dataset.type;
+      var qaAmountVal = document.getElementById('qa-amount').value;
+      var qaDateVal = document.getElementById('qa-date').value;
+      var qaNoteVal = document.getElementById('qa-note').value;
+      quickAddType = qaNewType;
+      var qaRoot = document.getElementById('qa-root');
+      if (qaRoot) {
+        qaRoot.outerHTML = renderQuickAdd();
+        document.getElementById('qa-amount').value = qaAmountVal;
+        document.getElementById('qa-date').value = qaDateVal;
+        document.getElementById('qa-note').value = qaNoteVal;
+      }
+      return;
+    }
     if (action === 'tab') {
       currentTab = btn.dataset.tab;
       editingTransactionId = null;
@@ -2607,6 +2778,7 @@
       txSearchQuery = '';
       txFilterCategoryId = '';
       txFilterType = '';
+      quickAddOpen = false;
       render();
       return;
     }
