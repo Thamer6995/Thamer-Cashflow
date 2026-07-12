@@ -1,0 +1,322 @@
+<meta charset="UTF-8">
+<title>معاينة: الإضافة السريعة</title>
+<style>
+  :root{
+    --paper:#0B1420;
+    --card:#132238;
+    --card-alt:#0E1B2C;
+    --ink:#F2EFEA;
+    --ink-soft:#C7D0DD;
+    --slate:#93A2B8;
+    --slate-soft:#6C7B90;
+    --line:#22374F;
+    --success:#34D399;
+    --danger:#FB7185;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+    --radius: 16px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    direction:rtl;
+  }
+  .mono{ font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; font-variant-numeric: tabular-nums; direction:ltr; unicode-bidi:plaintext; }
+
+  /* ---- Mock app chrome (for context only, matches the real app) ---- */
+  header.top{ background:var(--card); border-bottom:1px solid var(--line); margin-bottom:24px; }
+  header.top .inner{ max-width:480px; margin:0 auto; padding:16px 20px 0; }
+  .row1{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  header.top h1{ font-size:16.5px; font-weight:700; margin:0; }
+  .tabs{ display:flex; gap:2px; overflow-x:auto; }
+  .tab{ appearance:none; border:none; background:transparent; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--slate); padding:11px 14px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+  .tab.active{ color:var(--success); border-bottom-color:var(--success); }
+  main.content{ max-width:480px; margin:0 auto; padding:0 20px 100px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .grid-4{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .card.stat-tile{ padding:11px 10px; }
+  .stat-tile .k{ font-size:10px; font-weight:600; color:var(--slate); margin-bottom:4px; }
+  .stat-tile .v{ font-size:15px; font-weight:700; }
+  .v.positive{ color:var(--success); }
+  .v.negative{ color:var(--danger); }
+  .grid-2{ display:flex; flex-direction:column; gap:14px; }
+  .breakdown h3{ font-size:15px; font-weight:700; margin:0 0 14px; }
+  .breakdown .line{ display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px; margin-bottom:6px; gap:8px; }
+  .breakdown .line .name{ color:var(--ink-soft); }
+  .breakdown .line .amt{ font-weight:600; }
+  .bar-track{ height:6px; border-radius:6px; background:var(--card-alt); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:6px; }
+  .bar-fill.income{ background:var(--success); }
+  .bar-fill.expense{ background:var(--danger); }
+
+  /* ================= Quick Add ================= */
+
+  /* Floating action button */
+  .fab{
+    position:fixed;
+    left:20px;                 /* RTL page: "bottom-right" visually = inline-start in an rtl-mirrored screen coordinate,
+                                   but plain fixed CSS uses physical sides — right:20px is the true bottom-right corner */
+    right:20px;
+    bottom:calc(20px + var(--safe-b));
+    left:auto;
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    background:var(--success);
+    color:#08150F;
+    border:none;
+    font-size:28px;
+    font-weight:400;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 6px 20px rgba(52,211,153,.4), 0 2px 6px rgba(0,0,0,.3);
+    z-index:40;
+    transition:transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+  }
+  .fab:hover{ box-shadow:0 8px 26px rgba(52,211,153,.5), 0 2px 6px rgba(0,0,0,.3); }
+  .fab:active{ transform:scale(.94); }
+  .fab.hidden{
+    opacity:0;
+    transform:scale(.5);
+    pointer-events:none;
+  }
+  .fab svg{ width:24px; height:24px; }
+
+  /* Backdrop */
+  .qa-backdrop{
+    position:fixed; inset:0; background:rgba(4,8,14,.6);
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    z-index:50;
+  }
+  .qa-backdrop.open{ opacity:1; pointer-events:auto; }
+
+  /* Bottom sheet */
+  .qa-sheet{
+    position:fixed; left:0; right:0; bottom:0;
+    max-width:480px; margin:0 auto;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-bottom:none;
+    border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 30px rgba(0,0,0,.4);
+    padding:10px 20px calc(20px + var(--safe-b));
+    transform:translateY(105%);
+    transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    z-index:51;
+  }
+  .qa-sheet.open{ transform:translateY(0); }
+  .qa-handle{ width:36px; height:4px; background:var(--line); border-radius:3px; margin:0 auto 14px; }
+  .qa-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .qa-head h2{ font-size:16px; font-weight:700; margin:0; }
+  .qa-close{
+    appearance:none; border:none; background:var(--card-alt); color:var(--slate);
+    width:30px; height:30px; border-radius:50%; font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qa-close:hover{ color:var(--ink); }
+
+  .qa-type-toggle{ display:flex; gap:8px; margin-bottom:16px; }
+  .qa-type-btn{
+    flex:1; appearance:none; border:1.5px solid var(--line); background:var(--card-alt); color:var(--slate);
+    font-family:inherit; font-size:14px; font-weight:600; padding:12px; border-radius:10px; cursor:pointer;
+  }
+  .qa-type-btn.active-income{ background:var(--success); border-color:var(--success); color:#08150F; }
+  .qa-type-btn.active-expense{ background:var(--danger); border-color:var(--danger); color:#2B0710; }
+
+  .qa-amount-field{ margin-bottom:16px; }
+  .qa-amount-field input{
+    width:100%; font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; text-align:center;
+    font-size:34px; font-weight:700; background:transparent; border:none; color:var(--ink); outline:none; padding:6px 0;
+  }
+  .qa-amount-field input::placeholder{ color:var(--slate-soft); }
+
+  .qa-field{ margin-bottom:12px; }
+  .qa-field label{ display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--ink-soft); }
+  .qa-field select, .qa-field input{
+    width:100%; font-family:inherit; font-size:16px; padding:11px 12px; border-radius:9px;
+    border:1.5px solid var(--line); background:var(--card-alt); color:var(--ink); outline:none;
+  }
+  .qa-field select:focus, .qa-field input:focus{ border-color:var(--success); }
+
+  .qa-row{ display:flex; gap:10px; }
+  .qa-row .qa-field{ flex:1; }
+
+  .qa-save{
+    width:100%; appearance:none; border:none; border-radius:12px; background:var(--success); color:#08150F;
+    font-family:inherit; font-weight:700; font-size:15.5px; padding:15px; cursor:pointer; margin-top:6px;
+    transition:background .15s ease;
+  }
+  .qa-save.expense-mode{ background:var(--danger); color:#2B0710; }
+  .qa-save:active{ transform:scale(.99); }
+
+  .qa-toast{
+    position:fixed; bottom:calc(96px + var(--safe-b)); left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:var(--paper); font-size:13.5px; font-weight:600; padding:10px 18px; border-radius:10px;
+    opacity:0; transition:opacity .2s ease, transform .2s ease; z-index:60; white-space:nowrap;
+  }
+  .qa-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Annotation callouts for the preview only */
+  .note-banner{
+    max-width:480px; margin:0 auto 0; padding:12px 20px; background:var(--card-alt); border-bottom:1px solid var(--line);
+    font-size:12.5px; color:var(--slate); line-height:1.7;
+  }
+  .note-banner b{ color:var(--ink); }
+
+  @media (prefers-reduced-motion: reduce){
+    .fab, .qa-backdrop, .qa-sheet, .qa-toast{ transition:none !important; }
+  }
+</style>
+
+<div class="note-banner">
+  🔎 <b>هذي معاينة تفاعلية فقط</b> — جرّب اضغط على الزر الأخضر تحت، سجّل عملية وهمية، ولاحظ سلوك الزر والنافذة. لسا ما لمست كود التطبيق الحقيقي.
+</div>
+
+<header class="top">
+  <div class="inner">
+    <div class="row1"><h1>متابعة التدفقات النقدية الشهرية</h1></div>
+    <div class="tabs">
+      <button class="tab active">الملخص الشهري</button>
+      <button class="tab">العمليات اليومية</button>
+      <button class="tab">الميزانية</button>
+      <button class="tab">التقارير</button>
+    </div>
+  </div>
+</header>
+
+<main class="content">
+  <div class="grid-4">
+    <div class="card stat-tile"><div class="k">الرصيد الافتتاحي</div><div class="v">5,000.00</div></div>
+    <div class="card stat-tile"><div class="k">إجمالي المداخيل</div><div class="v positive">4,000.00</div></div>
+    <div class="card stat-tile"><div class="k">إجمالي المصاريف</div><div class="v negative">1,550.00</div></div>
+    <div class="card stat-tile"><div class="k">الرصيد الختامي</div><div class="v positive">7,450.00</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card breakdown">
+      <h3>المصاريف حسب البند</h3>
+      <div class="line"><span class="name">إيجار</span><span class="amt mono">1,200.00</span></div>
+      <div class="bar-track"><div class="bar-fill expense" style="width:77%"></div></div>
+    </div>
+  </div>
+</main>
+
+<!-- Floating action button -->
+<button class="fab" id="fab" title="إضافة سريعة" aria-label="إضافة عملية سريعة">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+</button>
+
+<div class="qa-backdrop" id="backdrop"></div>
+
+<div class="qa-sheet" id="sheet" role="dialog" aria-modal="true" aria-label="إضافة عملية سريعة">
+  <div class="qa-handle"></div>
+  <div class="qa-head">
+    <h2>إضافة سريعة</h2>
+    <button class="qa-close" id="closeBtn">✕</button>
+  </div>
+
+  <div class="qa-type-toggle">
+    <button type="button" class="qa-type-btn active-income" id="typeIncome">دخل</button>
+    <button type="button" class="qa-type-btn" id="typeExpense">مصروف</button>
+  </div>
+
+  <div class="qa-amount-field">
+    <input type="number" inputmode="decimal" id="qaAmount" placeholder="0.00" autofocus>
+  </div>
+
+  <div class="qa-field">
+    <label>البند</label>
+    <select id="qaCategory">
+      <option value="">اختر البند</option>
+      <option value="salary">راتب</option>
+      <option value="other-income">إيرادات أخرى</option>
+    </select>
+  </div>
+
+  <div class="qa-row">
+    <div class="qa-field">
+      <label>التاريخ</label>
+      <input type="date" id="qaDate">
+    </div>
+    <div class="qa-field">
+      <label>ملاحظة (اختياري)</label>
+      <input type="text" id="qaNote" placeholder="—">
+    </div>
+  </div>
+
+  <button class="qa-save" id="saveBtn">حفظ العملية</button>
+</div>
+
+<div class="qa-toast" id="toast">✓ تمت إضافة العملية</div>
+
+<script>
+  const fab = document.getElementById('fab');
+  const backdrop = document.getElementById('backdrop');
+  const sheet = document.getElementById('sheet');
+  const closeBtn = document.getElementById('closeBtn');
+  const typeIncome = document.getElementById('typeIncome');
+  const typeExpense = document.getElementById('typeExpense');
+  const saveBtn = document.getElementById('saveBtn');
+  const toast = document.getElementById('toast');
+  const catSelect = document.getElementById('qaCategory');
+  const dateInput = document.getElementById('qaDate');
+
+  const incomeCats = ['<option value="">اختر البند</option>', '<option value="salary">راتب</option>', '<option value="other-income">إيرادات أخرى</option>'];
+  const expenseCats = ['<option value="">اختر البند</option>', '<option value="rent">إيجار</option>', '<option value="food">مأكل ومشرب</option>', '<option value="transport">مواصلات</option>'];
+
+  const today = new Date();
+  dateInput.value = today.toISOString().slice(0, 10);
+
+  let currentType = 'income';
+
+  function openSheet() {
+    fab.classList.add('hidden');
+    backdrop.classList.add('open');
+    sheet.classList.add('open');
+    document.getElementById('qaAmount').focus();
+  }
+  function closeSheet() {
+    fab.classList.remove('hidden');
+    backdrop.classList.remove('open');
+    sheet.classList.remove('open');
+  }
+  function setType(type) {
+    currentType = type;
+    typeIncome.classList.toggle('active-income', type === 'income');
+    typeExpense.classList.toggle('active-expense', type === 'expense');
+    saveBtn.classList.toggle('expense-mode', type === 'expense');
+    catSelect.innerHTML = (type === 'income' ? incomeCats : expenseCats).join('');
+  }
+
+  fab.addEventListener('click', openSheet);
+  closeBtn.addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', closeSheet);
+  typeIncome.addEventListener('click', () => setType('income'));
+  typeExpense.addEventListener('click', () => setType('expense'));
+
+  saveBtn.addEventListener('click', () => {
+    const amount = document.getElementById('qaAmount').value;
+    if (!amount || Number(amount) <= 0) {
+      document.getElementById('qaAmount').style.color = '#FB7185';
+      setTimeout(() => { document.getElementById('qaAmount').style.color = ''; }, 900);
+      return;
+    }
+    closeSheet();
+    document.getElementById('qaAmount').value = '';
+    catSelect.value = '';
+    document.getElementById('qaNote').value = '';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  });
+</script>
