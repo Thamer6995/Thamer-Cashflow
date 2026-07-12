@@ -1182,7 +1182,7 @@
   var txFilterType = '';
 
   var quickAddOpen = false;
-  var quickAddType = 'income';
+  var quickAddType = 'expense';
 
   var chartBreakdownType = 'expense';
   var chartActive = {};
@@ -2415,7 +2415,7 @@
       });
       saveState();
       quickAddOpen = false;
-      quickAddType = 'income';
+      quickAddType = 'expense';
       render();
       var toastEl = document.getElementById('qa-toast');
       if (toastEl) {
