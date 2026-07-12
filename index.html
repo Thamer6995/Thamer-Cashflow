@@ -693,6 +693,8 @@
       field_note: 'ملاحظة (اختياري)',
       no_categories_warning: 'لا توجد بنود لهذا النوع، أضِف بندًا من تبويب البنود أولًا.',
       err_select_category: 'اختر البند',
+      quick_add_category_placeholder: 'بدون بند (اختياري)',
+      no_category_label: 'بدون بند',
       err_amount: 'أدخل مبلغًا صحيحًا أكبر من صفر',
       btn_add_tx: 'إضافة العملية',
       btn_save_edit: 'حفظ التعديل',
@@ -912,7 +914,7 @@
 
     function toBreakdown(totals, total) {
       return Object.keys(totals).map(function (categoryId) {
-        var category = catById[categoryId] || { id: categoryId, name: t('field_category') };
+        var category = catById[categoryId] || { id: categoryId, name: t('no_category_label') };
         var amt = totals[categoryId];
         var pct = total > 0 ? Math.round((amt / total) * 100) : 0;
         return { category: category, total: amt, pct: pct };
@@ -1200,10 +1202,10 @@
 
   function renderQuickAdd() {
     var cats = state.categories.filter(function (c) { return c.type === quickAddType; });
-    var catOptions = '<option value="">' + t('field_category_placeholder') + '</option>' + cats.map(function (c) {
+    var catOptions = '<option value="">' + t('quick_add_category_placeholder') + '</option>' + cats.map(function (c) {
       return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
     }).join('');
-    var catWarning = cats.length === 0 ? '<p class="warn-text">' + t('no_categories_warning') + '</p>' : '';
+    var catWarning = '';
     var saveCls = quickAddType === 'expense' ? 'expense-mode' : '';
 
     return (
@@ -1477,7 +1479,7 @@
         return (
           '<tr>' +
           '<td>' + tx.date + '</td>' +
-          '<td>' + (cat ? escapeHtml(cat.name) : '—') + '</td>' +
+          '<td>' + (cat ? escapeHtml(cat.name) : escapeHtml(t('no_category_label'))) + '</td>' +
           '<td>' + (tx.note ? escapeHtml(tx.note) : '—') + '</td>' +
           '<td class="amt mono ' + tx.type + '">' + sign + formatCurrency(tx.amount) + '</td>' +
           '<td class="actions">' +
@@ -2406,11 +2408,10 @@
       var qaNote = document.getElementById('qa-note').value.trim();
       var qaErrEl = document.getElementById('qa-err');
 
-      if (!qaCategoryId) { qaErrEl.textContent = t('err_select_category'); return; }
       if (isNaN(qaAmount) || qaAmount <= 0) { qaErrEl.textContent = t('err_amount'); return; }
 
       state.transactions.push({
-        id: uid(), date: qaDate || todayStr(), categoryId: qaCategoryId,
+        id: uid(), date: qaDate || todayStr(), categoryId: qaCategoryId || undefined,
         type: quickAddType, amount: qaAmount, note: qaNote || undefined
       });
       saveState();
@@ -2913,7 +2914,7 @@
       var rowsX = [[t('th_date'), t('th_type'), t('th_category'), t('th_note'), t('th_amount')]];
       state.transactions.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (tx) {
         var cat = catByIdX[tx.categoryId];
-        rowsX.push([tx.date, tx.type === 'income' ? t('type_income') : t('type_expense'), cat ? cat.name : '', tx.note || '', tx.amount]);
+        rowsX.push([tx.date, tx.type === 'income' ? t('type_income') : t('type_expense'), cat ? cat.name : t('no_category_label'), tx.note || '', tx.amount]);
       });
       exportCsv('transactions.csv', rowsX);
       return;
