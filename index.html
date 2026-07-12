@@ -206,6 +206,23 @@
   .field .err{ font-size:12px; color:var(--danger); margin-top:6px; min-height:0; }
   .warn-text{ font-size:12px; color:var(--warning); margin-top:6px; }
 
+  .bank-edit-full{ grid-column:1 / -1; }
+  #bank-edit-rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .bank-row{ display:flex; gap:8px; align-items:center; }
+  .bank-row .bank-row-label{ flex:1.3; min-width:0; }
+  .bank-row .bank-row-amount{ flex:1; min-width:0; }
+  .bank-row input{
+    font-family:inherit; font-size:14px; padding:9px 10px; border-radius:9px;
+    border:1.5px solid var(--line); background:var(--card-alt); color:var(--ink); outline:none;
+  }
+  .bank-row input:focus{ border-color:var(--success); }
+  .bank-row .icon-btn{ flex-shrink:0; font-size:15px; }
+  .bank-edit-total{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:13.5px; font-weight:700; color:var(--ink-soft);
+    padding-top:10px; margin-top:4px; margin-bottom:12px; border-top:1px solid var(--line);
+  }
+
   .type-toggle{ display:flex; gap:8px; margin-bottom:14px; }
   .type-btn{
     flex:1;
@@ -603,10 +620,16 @@
       subscriptions: [],
       investments: [],
       budgets: {},
-      bankBalance: null,
+      bankAccounts: [],
       bankBalanceUpdatedAt: null,
       notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true }
     };
+  }
+
+  function migrateBankAccounts(parsed) {
+    if (Array.isArray(parsed.bankAccounts)) return parsed.bankAccounts;
+    if (parsed.bankBalance != null) return [{ id: uid(), label: '', amount: parsed.bankBalance }];
+    return [];
   }
 
   function loadState() {
@@ -627,7 +650,7 @@
         subscriptions: parsed.subscriptions || [],
         investments: parsed.investments || [],
         budgets: parsed.budgets || {},
-        bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
+        bankAccounts: migrateBankAccounts(parsed),
         bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
         notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
       };
@@ -842,7 +865,12 @@
       add_bank_balance_link: 'إضافة الرصيد البنكي',
       stat_variance: 'الفرق (بنك - تطبيق)',
       bank_not_set: 'لم يُدخل بعد',
-      bank_reconcile_note: 'يقارن الرصيد الختامي للشهر الحالي (حتى اليوم) بما تُدخله من رصيدك البنكي الفعلي.',
+      bank_reconcile_note: 'يقارن الرصيد الختامي للشهر الحالي (حتى اليوم) بمجموع أرصدة حساباتك البنكية.',
+      bank_account_label_placeholder: 'اسم الحساب (اختياري)',
+      bank_account_amount_placeholder: 'الرصيد',
+      add_bank_account_row: '➕ إضافة حساب آخر',
+      bank_total_label: 'الإجمالي',
+      err_bank_no_accounts: 'أدخل رصيدًا صحيحًا لحساب واحد على الأقل',
 
       export_transactions_btn: 'تصدير العمليات (Excel)',
       export_report_btn: 'تصدير التقرير (Excel)',
@@ -899,6 +927,11 @@
   }
 
   // ---------------- Finance calculations ----------------
+  function getBankBalanceTotal() {
+    if (!state.bankAccounts || state.bankAccounts.length === 0) return null;
+    return state.bankAccounts.reduce(function (sum, a) { return sum + a.amount; }, 0);
+  }
+
   function computeMonthSummary(monthKey) {
     var opening = state.openingBalance != null ? state.openingBalance : 0;
     var priorNet = 0, monthIncome = 0, monthExpense = 0;
@@ -1069,9 +1102,10 @@
       });
     }
 
-    if (s.bankMismatch && state.bankBalance != null) {
+    var bankTotalForNotif = getBankBalanceTotal();
+    if (s.bankMismatch && bankTotalForNotif != null) {
       var appBalance = computeMonthSummary(currentMonthKey()).closingBalance;
-      var diff = state.bankBalance - appBalance;
+      var diff = bankTotalForNotif - appBalance;
       if (Math.abs(diff) > 0.009) {
         list.push({
           level: Math.abs(diff) >= 100 ? 'danger' : 'warning',
@@ -1187,6 +1221,7 @@
   var editingLoanPaymentId = null;
 
   var editingBankBalance = false;
+  var bankEditRows = null;
   var editingSubId = null;
   var editingInvestmentId = null;
 
@@ -1323,6 +1358,45 @@
   }
 
   // ---------------- Summary tab ----------------
+  function renderBankEditBody() {
+    var rows = bankEditRows || [];
+    var total = rows.reduce(function (sum, r) {
+      var amt = parseFloat(r.amount);
+      return sum + (isNaN(amt) ? 0 : amt);
+    }, 0);
+    var rowsHtml = rows.map(function (r) {
+      return (
+        '<div class="bank-row" data-row-id="' + r.id + '">' +
+        '<input type="text" class="bank-row-label" placeholder="' + t('bank_account_label_placeholder') + '" value="' + escapeAttr(r.label || '') + '">' +
+        '<input type="number" step="0.01" class="bank-row-amount" placeholder="' + t('bank_account_amount_placeholder') + '" value="' + (r.amount === '' || r.amount == null ? '' : r.amount) + '">' +
+        '<button type="button" class="icon-btn danger" data-action="remove-bank-row" data-row-id="' + r.id + '" title="delete">🗑️</button>' +
+        '</div>'
+      );
+    }).join('');
+    return (
+      '<div id="bank-edit-body">' +
+      '<div id="bank-edit-rows">' + rowsHtml + '</div>' +
+      '<button type="button" class="edit-link" data-action="add-bank-row">' + t('add_bank_account_row') + '</button>' +
+      '<div class="bank-edit-total"><span>' + t('bank_total_label') + '</span><span class="mono">' + formatCurrency(total) + '</span></div>' +
+      '</div>'
+    );
+  }
+
+  function syncBankEditRowsFromDom() {
+    if (!bankEditRows) return;
+    var rowEls = document.querySelectorAll('#bank-edit-rows .bank-row');
+    var byId = {};
+    rowEls.forEach(function (el) {
+      byId[el.getAttribute('data-row-id')] = {
+        label: el.querySelector('.bank-row-label').value,
+        amount: el.querySelector('.bank-row-amount').value
+      };
+    });
+    bankEditRows.forEach(function (r) {
+      if (byId[r.id]) { r.label = byId[r.id].label; r.amount = byId[r.id].amount; }
+    });
+  }
+
   function renderSummary() {
     var s = computeMonthSummary(currentMonth);
     var closingCls = s.closingBalance >= 0 ? 'positive' : 'negative';
@@ -1368,27 +1442,28 @@
     }
 
     var appBalanceNow = computeMonthSummary(currentMonthKey()).closingBalance;
+    var bankBalanceTotal = getBankBalanceTotal();
     var bankTile;
     if (editingBankBalance) {
       bankTile = (
-        '<form id="bank-edit-form" class="card stat-tile">' +
+        '<form id="bank-edit-form" class="card stat-tile bank-edit-full">' +
         '<div class="k">' + t('stat_bank_balance') + '</div>' +
-        '<div class="field" style="margin-bottom:8px;"><input type="number" step="0.01" id="bank-edit-amount" value="' + (state.bankBalance != null ? state.bankBalance : '') + '" placeholder="0.00"></div>' +
+        renderBankEditBody() +
         '<div id="bank-edit-err" class="err"></div>' +
         '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('save') + '</button>' +
         '<button type="button" class="btn-ghost" data-action="cancel-edit-bank">' + t('cancel') + '</button></div>' +
         '</form>'
       );
-    } else if (state.bankBalance == null) {
+    } else if (bankBalanceTotal == null) {
       bankTile = (
         '<div class="card stat-tile"><div class="k">' + t('stat_bank_balance') + '</div><div class="v" style="color:var(--slate-soft);font-size:14px;">' + t('bank_not_set') + '</div>' +
         '<button class="edit-link" data-action="edit-bank">➕ ' + t('add_bank_balance_link') + '</button></div>'
       );
     } else {
-      var diff = state.bankBalance - appBalanceNow;
+      var diff = bankBalanceTotal - appBalanceNow;
       var diffCls = Math.abs(diff) < 0.01 ? '' : (diff > 0 ? 'positive' : 'negative');
       bankTile = (
-        '<div class="card stat-tile"><div class="k">' + t('stat_bank_balance') + '</div><div class="v">' + formatCurrency(state.bankBalance) + '</div>' +
+        '<div class="card stat-tile"><div class="k">' + t('stat_bank_balance') + '</div><div class="v">' + formatCurrency(bankBalanceTotal) + '</div>' +
         '<button class="edit-link" data-action="edit-bank">✏️ ' + t('edit_bank_balance_link') + '</button></div>' +
         '<div class="card stat-tile"><div class="k">' + t('stat_variance') + '</div><div class="v ' + diffCls + '">' + (diff > 0 ? '+' : '') + formatCurrency(diff) + '</div>' +
         '<div style="font-size:11px;color:var(--slate-soft);margin-top:8px;">' + t('bank_reconcile_note') + '</div></div>'
@@ -2558,14 +2633,21 @@
 
     if (form.id === 'bank-edit-form') {
       e.preventDefault();
-      var bAmountRaw = document.getElementById('bank-edit-amount').value;
+      syncBankEditRowsFromDom();
       var bErrEl = document.getElementById('bank-edit-err');
-      if (bAmountRaw.trim() === '') { bErrEl.textContent = t('err_invalid_balance'); return; }
-      var bAmount = parseFloat(bAmountRaw);
-      if (isNaN(bAmount)) { bErrEl.textContent = t('err_invalid_balance'); return; }
-      state.bankBalance = bAmount;
+      var validAccounts = [];
+      for (var bi = 0; bi < bankEditRows.length; bi++) {
+        var raw = bankEditRows[bi].amount;
+        if (raw === '' || raw == null) continue;
+        var amt = parseFloat(raw);
+        if (isNaN(amt)) { bErrEl.textContent = t('err_invalid_balance'); return; }
+        validAccounts.push({ id: bankEditRows[bi].id, label: bankEditRows[bi].label.trim(), amount: amt });
+      }
+      if (validAccounts.length === 0) { bErrEl.textContent = t('err_bank_no_accounts'); return; }
+      state.bankAccounts = validAccounts;
       state.bankBalanceUpdatedAt = todayStr();
       editingBankBalance = false;
+      bankEditRows = null;
       saveState();
       render();
       return;
@@ -2731,7 +2813,7 @@
           subscriptions: parsed.subscriptions || [],
           investments: parsed.investments || [],
           budgets: parsed.budgets || {},
-          bankBalance: parsed.bankBalance != null ? parsed.bankBalance : null,
+          bankAccounts: migrateBankAccounts(parsed),
           bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
           notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
         };
@@ -2913,8 +2995,35 @@
     }
 
     // ----- Bank reconciliation -----
-    if (action === 'edit-bank') { editingBankBalance = true; render(); return; }
-    if (action === 'cancel-edit-bank') { editingBankBalance = false; render(); return; }
+    if (action === 'edit-bank') {
+      editingBankBalance = true;
+      bankEditRows = (state.bankAccounts && state.bankAccounts.length)
+        ? state.bankAccounts.map(function (a) { return { id: a.id, label: a.label || '', amount: a.amount }; })
+        : [{ id: uid(), label: '', amount: '' }];
+      render();
+      return;
+    }
+    if (action === 'cancel-edit-bank') { editingBankBalance = false; bankEditRows = null; render(); return; }
+    if (action === 'add-bank-row') {
+      syncBankEditRowsFromDom();
+      bankEditRows.push({ id: uid(), label: '', amount: '' });
+      var bankBodyEl = document.getElementById('bank-edit-body');
+      if (bankBodyEl) {
+        bankBodyEl.outerHTML = renderBankEditBody();
+        var newRowInputs = document.querySelectorAll('#bank-edit-rows .bank-row-label');
+        if (newRowInputs.length) newRowInputs[newRowInputs.length - 1].focus();
+      }
+      return;
+    }
+    if (action === 'remove-bank-row') {
+      syncBankEditRowsFromDom();
+      var removeId = btn.dataset.rowId;
+      bankEditRows = bankEditRows.filter(function (r) { return r.id !== removeId; });
+      if (bankEditRows.length === 0) bankEditRows.push({ id: uid(), label: '', amount: '' });
+      var bankBodyEl2 = document.getElementById('bank-edit-body');
+      if (bankBodyEl2) bankBodyEl2.outerHTML = renderBankEditBody();
+      return;
+    }
 
     // ----- Export -----
     if (action === 'clear-tx-filters') {
