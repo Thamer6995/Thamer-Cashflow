@@ -635,8 +635,27 @@
 <body>
 <div id="app"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
 <script>
 (function () {
+  var firebaseConfig = {
+    apiKey: "AIzaSyBOP0bOkqhT6vxeG9NMMtsXX5rnkJeu_T0",
+    authDomain: "thamer-cashflow.firebaseapp.com",
+    projectId: "thamer-cashflow",
+    storageBucket: "thamer-cashflow.firebasestorage.app",
+    messagingSenderId: "321432829186",
+    appId: "1:321432829186:web:56653a20067f9b4f2c961b"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  try {
+    db.enablePersistence({ synchronizeTabs: true }).catch(function () { /* offline cache unavailable; app still works online */ });
+  } catch (e) { /* offline cache unsupported in this browser */ }
+
   var STORAGE_KEY = 'thamer-cashflow-data-v2';
 
   var DEFAULT_CATEGORIES = [
@@ -674,35 +693,52 @@
     return [];
   }
 
+  function normalizeState(parsed) {
+    var d = defaultState();
+    return {
+      openingBalance: parsed.openingBalance != null ? parsed.openingBalance : null,
+      openingBalanceDate: parsed.openingBalanceDate || null,
+      categories: parsed.categories || d.categories,
+      transactions: parsed.transactions || [],
+      creditCards: parsed.creditCards || [],
+      cardTransactions: parsed.cardTransactions || [],
+      loans: parsed.loans || [],
+      loanPayments: parsed.loanPayments || [],
+      subscriptions: parsed.subscriptions || [],
+      investments: parsed.investments || [],
+      budgets: parsed.budgets || {},
+      bankAccounts: migrateBankAccounts(parsed),
+      bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
+      recurringTransactions: parsed.recurringTransactions || [],
+      notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
+    };
+  }
+
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
-      var parsed = JSON.parse(raw);
-      var d = defaultState();
-      return {
-        openingBalance: parsed.openingBalance != null ? parsed.openingBalance : null,
-        openingBalanceDate: parsed.openingBalanceDate || null,
-        categories: parsed.categories || d.categories,
-        transactions: parsed.transactions || [],
-        creditCards: parsed.creditCards || [],
-        cardTransactions: parsed.cardTransactions || [],
-        loans: parsed.loans || [],
-        loanPayments: parsed.loanPayments || [],
-        subscriptions: parsed.subscriptions || [],
-        investments: parsed.investments || [],
-        budgets: parsed.budgets || {},
-        bankAccounts: migrateBankAccounts(parsed),
-        bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
-        recurringTransactions: parsed.recurringTransactions || [],
-        notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
-      };
+      return normalizeState(JSON.parse(raw));
     } catch (e) {
       return defaultState();
     }
   }
 
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  var firestoreSyncTimer = null;
+  function syncStateToFirestore() {
+    if (!currentUser) return;
+    if (firestoreSyncTimer) clearTimeout(firestoreSyncTimer);
+    firestoreSyncTimer = setTimeout(function () {
+      db.collection('users').doc(currentUser.uid).set(state).catch(function (err) {
+        console.error('Firestore sync failed', err);
+      });
+    }, 600);
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    syncStateToFirestore();
+  }
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 
@@ -765,6 +801,31 @@
       gate_submit: 'بدء المتابعة',
       gate_restore_link: 'استعادة نسخة احتياطية سابقة',
       err_invalid_balance: 'الرجاء إدخال رصيد صحيح',
+
+      auth_loading: 'جارٍ التحقق من الحساب...',
+      auth_login_title: 'تسجيل الدخول',
+      auth_signup_title: 'إنشاء حساب جديد',
+      auth_desc: 'سجّل دخولك عشان بياناتك تتزامن تلقائيًا بين كل أجهزتك.',
+      auth_email_label: 'البريد الإلكتروني',
+      auth_password_label: 'كلمة المرور',
+      auth_login_submit: 'تسجيل الدخول',
+      auth_signup_submit: 'إنشاء الحساب',
+      auth_have_account: 'عندك حساب؟ سجّل دخول',
+      auth_no_account: 'ما عندك حساب؟ أنشئ واحد',
+      auth_forgot_password: 'نسيت كلمة المرور؟',
+      auth_reset_title: 'استعادة كلمة المرور',
+      auth_reset_desc: 'أدخل بريدك الإلكتروني وبنرسل لك رابط لإعادة تعيين كلمة المرور.',
+      auth_reset_submit: 'إرسال رابط الاستعادة',
+      auth_reset_sent: 'تم إرسال رابط استعادة كلمة المرور إلى بريدك',
+      auth_back_to_login: 'رجوع لتسجيل الدخول',
+      auth_err_required: 'أدخل البريد الإلكتروني وكلمة المرور',
+      auth_err_load_failed: 'تعذّر تحميل بياناتك، تحقق من اتصالك بالإنترنت وأعد المحاولة',
+      logout_btn: 'تسجيل الخروج',
+      confirm_logout: 'هل تريد تسجيل الخروج؟',
+      migrate_title: 'وجدنا بيانات محفوظة على هذا الجهاز',
+      migrate_desc: 'عندك بيانات محفوظة محليًا على هذا الجهاز من قبل. تبي ترفعها لحسابك الجديد، أو تبدأ بحساب فارغ؟',
+      migrate_upload_btn: 'ارفع بياناتي الحالية',
+      migrate_fresh_btn: 'ابدأ من جديد',
       stat_opening: 'الرصيد الافتتاحي',
       stat_income: 'إجمالي المداخيل',
       stat_expense: 'إجمالي المصاريف',
@@ -1300,6 +1361,14 @@
       ' A' + rInner + ',' + rInner + ' 0 ' + largeArc + ' 0 ' + p4[0] + ',' + p4[1] + ' Z';
   }
 
+  // ---------------- Auth state ----------------
+  var currentUser = null;
+  var authLoading = true;
+  var authScreen = 'login';
+  var authError = '';
+  var pendingLocalMigration = null;
+  var firestoreUnsubscribe = null;
+
   // ---------------- App state ----------------
   var state = loadState();
   var currentTab = 'summary';
@@ -1341,6 +1410,14 @@
 
   function render() {
     applyDocumentTitle();
+    if (authLoading || !currentUser) {
+      app.innerHTML = renderAuthScreen();
+      return;
+    }
+    if (pendingLocalMigration) {
+      app.innerHTML = renderMigrationPrompt();
+      return;
+    }
     if (state.openingBalance === null) {
       app.innerHTML = renderGate();
       return;
@@ -1350,6 +1427,72 @@
       lastRecurringCheckDate = todayStr();
     }
     app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>' + renderQuickAdd();
+  }
+
+  function mapAuthError(err) {
+    var code = err && err.code;
+    var map = {
+      'auth/invalid-email': 'البريد الإلكتروني غير صحيح',
+      'auth/user-not-found': 'لا يوجد حساب بهذا البريد',
+      'auth/wrong-password': 'كلمة المرور غير صحيحة',
+      'auth/email-already-in-use': 'هذا البريد مستخدم بالفعل، سجّل دخول بدلًا من إنشاء حساب',
+      'auth/weak-password': 'كلمة المرور ضعيفة، استخدم 6 أحرف على الأقل',
+      'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة',
+      'auth/too-many-requests': 'محاولات كثيرة، حاول لاحقًا',
+      'auth/network-request-failed': 'تحقق من اتصالك بالإنترنت'
+    };
+    return (code && map[code]) || 'حدث خطأ، حاول مرة أخرى';
+  }
+
+  function renderAuthScreen() {
+    if (authLoading) {
+      return '<div class="gate"><div class="card"><p class="desc">' + t('auth_loading') + '</p></div></div>';
+    }
+    if (authScreen === 'reset') {
+      return (
+        '<div class="gate"><div class="card">' +
+        '<h1>' + t('auth_reset_title') + '</h1>' +
+        '<p class="desc">' + t('auth_reset_desc') + '</p>' +
+        '<form id="auth-reset-form">' +
+        '<div class="field"><label>' + t('auth_email_label') + '</label><input type="email" id="auth-reset-email" autocomplete="email"></div>' +
+        '<div id="auth-err" class="err">' + escapeHtml(authError) + '</div>' +
+        '<button type="submit" class="btn-primary">' + t('auth_reset_submit') + '</button>' +
+        '</form>' +
+        '<button type="button" class="edit-link" data-action="auth-show-login">' + t('auth_back_to_login') + '</button>' +
+        '</div></div>'
+      );
+    }
+    var isSignup = authScreen === 'signup';
+    return (
+      '<div class="gate"><div class="card">' +
+      '<h1>' + (isSignup ? t('auth_signup_title') : t('auth_login_title')) + '</h1>' +
+      '<p class="desc">' + t('auth_desc') + '</p>' +
+      '<form id="auth-form">' +
+      '<div class="field"><label>' + t('auth_email_label') + '</label><input type="email" id="auth-email" autocomplete="email"></div>' +
+      '<div class="field"><label>' + t('auth_password_label') + '</label><input type="password" id="auth-password" autocomplete="' + (isSignup ? 'new-password' : 'current-password') + '"></div>' +
+      '<div id="auth-err" class="err">' + escapeHtml(authError) + '</div>' +
+      '<button type="submit" class="btn-primary">' + (isSignup ? t('auth_signup_submit') : t('auth_login_submit')) + '</button>' +
+      '</form>' +
+      (isSignup
+        ? '<button type="button" class="edit-link" data-action="auth-show-login">' + t('auth_have_account') + '</button>'
+        : ('<button type="button" class="edit-link" data-action="auth-show-signup">' + t('auth_no_account') + '</button>' +
+           '<button type="button" class="edit-link" data-action="auth-show-reset">' + t('auth_forgot_password') + '</button>')
+      ) +
+      '</div></div>'
+    );
+  }
+
+  function renderMigrationPrompt() {
+    return (
+      '<div class="gate"><div class="card">' +
+      '<h1>' + t('migrate_title') + '</h1>' +
+      '<p class="desc">' + t('migrate_desc') + '</p>' +
+      '<div class="btn-row">' +
+      '<button type="button" class="btn-primary" style="flex:1;" data-action="migrate-upload">' + t('migrate_upload_btn') + '</button>' +
+      '<button type="button" class="btn-ghost" data-action="migrate-fresh">' + t('migrate_fresh_btn') + '</button>' +
+      '</div>' +
+      '</div></div>'
+    );
   }
 
   function getTopUsedCategories(type, limit) {
@@ -1463,7 +1606,9 @@
 
     return (
       '<header class="top"><div class="inner">' +
-      '<div class="row1"><h1>' + t('brand_title') + '</h1></div>' +
+      '<div class="row1"><h1>' + t('brand_title') + '</h1>' +
+      '<button class="icon-btn" data-action="logout" title="' + t('logout_btn') + '" aria-label="' + t('logout_btn') + '">🚪</button>' +
+      '</div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       monthNavRow +
       '</div></header>'
@@ -2730,6 +2875,47 @@
   app.addEventListener('submit', function (e) {
     var form = e.target;
 
+    if (form.id === 'auth-form') {
+      e.preventDefault();
+      var aEmail = document.getElementById('auth-email').value.trim();
+      var aPassword = document.getElementById('auth-password').value;
+      authError = '';
+      function restoreAuthFields() {
+        var emailEl = document.getElementById('auth-email');
+        var passEl = document.getElementById('auth-password');
+        if (emailEl) emailEl.value = aEmail;
+        if (passEl) passEl.value = aPassword;
+      }
+      if (!aEmail || !aPassword) { authError = t('auth_err_required'); render(); restoreAuthFields(); return; }
+      var authPromise = authScreen === 'signup'
+        ? auth.createUserWithEmailAndPassword(aEmail, aPassword)
+        : auth.signInWithEmailAndPassword(aEmail, aPassword);
+      authPromise.catch(function (err) {
+        authError = mapAuthError(err);
+        render();
+        restoreAuthFields();
+      });
+      return;
+    }
+
+    if (form.id === 'auth-reset-form') {
+      e.preventDefault();
+      var rEmail = document.getElementById('auth-reset-email').value.trim();
+      authError = '';
+      if (!rEmail) { authError = t('auth_err_required'); render(); document.getElementById('auth-reset-email').value = rEmail; return; }
+      auth.sendPasswordResetEmail(rEmail).then(function () {
+        alert(t('auth_reset_sent'));
+        authScreen = 'login';
+        render();
+      }).catch(function (err) {
+        authError = mapAuthError(err);
+        render();
+        var resetEmailEl = document.getElementById('auth-reset-email');
+        if (resetEmailEl) resetEmailEl.value = rEmail;
+      });
+      return;
+    }
+
     if (form.id === 'qa-sheet') {
       e.preventDefault();
       var qaAmount = parseFloat(document.getElementById('qa-amount').value);
@@ -3069,24 +3255,7 @@
           return;
         }
         if (!confirm(t('confirm_import_backup'))) return;
-        var d = defaultState();
-        state = {
-          openingBalance: parsed.openingBalance != null ? parsed.openingBalance : null,
-          openingBalanceDate: parsed.openingBalanceDate || null,
-          categories: parsed.categories || d.categories,
-          transactions: parsed.transactions || [],
-          creditCards: parsed.creditCards || [],
-          cardTransactions: parsed.cardTransactions || [],
-          loans: parsed.loans || [],
-          loanPayments: parsed.loanPayments || [],
-          subscriptions: parsed.subscriptions || [],
-          investments: parsed.investments || [],
-          budgets: parsed.budgets || {},
-          bankAccounts: migrateBankAccounts(parsed),
-          bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
-          recurringTransactions: parsed.recurringTransactions || [],
-          notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
-        };
+        state = normalizeState(parsed);
         saveState();
         alert(t('import_success'));
         render();
@@ -3101,6 +3270,35 @@
     var btn = e.target.closest('[data-action]');
     if (!btn) return;
     var action = btn.dataset.action;
+
+    if (action === 'auth-show-signup') { authScreen = 'signup'; authError = ''; render(); return; }
+    if (action === 'auth-show-login') { authScreen = 'login'; authError = ''; render(); return; }
+    if (action === 'auth-show-reset') { authScreen = 'reset'; authError = ''; render(); return; }
+    if (action === 'logout') {
+      if (confirm(t('confirm_logout'))) {
+        if (firestoreUnsubscribe) { firestoreUnsubscribe(); firestoreUnsubscribe = null; }
+        authScreen = 'login';
+        authError = '';
+        auth.signOut();
+      }
+      return;
+    }
+    if (action === 'migrate-upload') {
+      state = pendingLocalMigration;
+      pendingLocalMigration = null;
+      attachFirestoreListener(currentUser.uid);
+      saveState();
+      render();
+      return;
+    }
+    if (action === 'migrate-fresh') {
+      pendingLocalMigration = null;
+      state = defaultState();
+      attachFirestoreListener(currentUser.uid);
+      saveState();
+      render();
+      return;
+    }
 
     if (action === 'qa-open') {
       quickAddOpen = true;
@@ -3524,6 +3722,54 @@
       render();
       return;
     }
+  });
+
+  function attachFirestoreListener(uid) {
+    if (firestoreUnsubscribe) firestoreUnsubscribe();
+    firestoreUnsubscribe = db.collection('users').doc(uid).onSnapshot(function (snap) {
+      if (snap.metadata.hasPendingWrites) return;
+      if (!snap.exists) return;
+      state = normalizeState(snap.data());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+    }, function (err) {
+      console.error('Firestore listener error', err);
+    });
+  }
+
+  auth.onAuthStateChanged(function (user) {
+    authLoading = false;
+    if (!user) {
+      currentUser = null;
+      if (firestoreUnsubscribe) { firestoreUnsubscribe(); firestoreUnsubscribe = null; }
+      render();
+      return;
+    }
+    currentUser = user;
+    var localSnapshotState = state;
+    db.collection('users').doc(user.uid).get().then(function (doc) {
+      if (doc.exists) {
+        state = normalizeState(doc.data());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        attachFirestoreListener(user.uid);
+        render();
+      } else {
+        var hasLocalData = localSnapshotState.openingBalance !== null || localSnapshotState.transactions.length > 0;
+        if (hasLocalData) {
+          pendingLocalMigration = localSnapshotState;
+          render();
+        } else {
+          state = defaultState();
+          attachFirestoreListener(user.uid);
+          saveState();
+          render();
+        }
+      }
+    }).catch(function (err) {
+      console.error('Failed to load user data', err);
+      authError = t('auth_err_load_failed');
+      render();
+    });
   });
 
   render();
