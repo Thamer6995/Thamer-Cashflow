@@ -982,6 +982,12 @@
 
       notif_title: 'إدارة الإشعارات',
       notif_desc: 'فعّل أو أوقف أنواع التنبيهات، وتابع التنبيهات النشطة حاليًا بناءً على بياناتك.',
+      notif_browser_perm_title: 'إشعارات المتصفح',
+      notif_browser_perm_desc: 'فعّل إشعارات المتصفح عشان توصلك التنبيهات فورًا كإشعار حقيقي على الجهاز وأنت فاتح التطبيق (حتى لو بتبويب أو تطبيق ثاني) — بدون ما تحتاج تدخل هذا التبويب يدويًا. على آيفون: يحتاج iOS 16.4 فأكثر مع إضافة التطبيق للشاشة الرئيسية أولًا، والتطبيق فاتح بالخلفية.',
+      notif_browser_perm_enable_btn: 'تفعيل إشعارات المتصفح',
+      notif_browser_perm_granted: '✓ إشعارات المتصفح مفعّلة',
+      notif_browser_perm_denied: 'الإشعارات مرفوضة من إعدادات المتصفح — فعّلها يدويًا من إعدادات الجهاز إذا حبيت',
+      notif_browser_perm_unsupported: 'متصفحك أو جهازك لا يدعم هذي الميزة حاليًا',
       notif_settings_title: 'أنواع التنبيهات',
       notif_type_cardLimit: 'اقتراب بطاقة ائتمانية من حدها',
       notif_type_subscriptionsDue: 'اقتراب استحقاق اشتراك',
@@ -1277,6 +1283,27 @@
     return list;
   }
 
+  function browserNotifSupported() { return typeof Notification !== 'undefined'; }
+
+  function checkAndFireBrowserNotifications() {
+    if (!browserNotifSupported() || Notification.permission !== 'granted') return;
+    computeNotifications().forEach(function (a) {
+      var key = a.title + '|' + a.message;
+      if (shownBrowserNotifKeys[key]) return;
+      shownBrowserNotifKeys[key] = true;
+      try {
+        new Notification(a.title, { body: a.message, icon: 'icons/icon-192.png' });
+      } catch (e) { /* notification blocked or unsupported context; ignore */ }
+    });
+  }
+
+  function maybeCheckBrowserNotifications() {
+    var now = Date.now();
+    if (now - lastBrowserNotifCheckTime < 30000) return;
+    lastBrowserNotifCheckTime = now;
+    checkAndFireBrowserNotifications();
+  }
+
   function csvEscape(val) {
     var s = val == null ? '' : String(val);
     if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
@@ -1396,6 +1423,9 @@
   var editingRecurringId = null;
   var lastRecurringCheckDate = null;
 
+  var shownBrowserNotifKeys = {};
+  var lastBrowserNotifCheckTime = 0;
+
   var txSearchQuery = '';
   var txFilterCategoryId = '';
   var txFilterType = '';
@@ -1426,6 +1456,7 @@
       generateDueRecurringTransactions();
       lastRecurringCheckDate = todayStr();
     }
+    maybeCheckBrowserNotifications();
     app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>' + renderQuickAdd();
   }
 
@@ -2536,6 +2567,26 @@
   }
 
   // ---------------- Notifications tab ----------------
+  function renderBrowserNotifPermCard() {
+    var statusHtml;
+    if (!browserNotifSupported()) {
+      statusHtml = '<p class="warn-text">' + t('notif_browser_perm_unsupported') + '</p>';
+    } else if (Notification.permission === 'granted') {
+      statusHtml = '<p style="font-size:12.5px;color:var(--success);font-weight:700;">' + t('notif_browser_perm_granted') + '</p>';
+    } else if (Notification.permission === 'denied') {
+      statusHtml = '<p class="warn-text">' + t('notif_browser_perm_denied') + '</p>';
+    } else {
+      statusHtml = '<button type="button" class="btn-primary" data-action="request-notif-permission">' + t('notif_browser_perm_enable_btn') + '</button>';
+    }
+    return (
+      '<div class="card" style="margin-bottom:16px;">' +
+      '<h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('notif_browser_perm_title') + '</h3>' +
+      '<p style="font-size:12.5px;color:var(--slate);margin:0 0 14px;line-height:1.6;">' + t('notif_browser_perm_desc') + '</p>' +
+      statusHtml +
+      '</div>'
+    );
+  }
+
   function renderNotifications() {
     var types = ['cardLimit', 'subscriptionsDue', 'budgetOverage', 'bankMismatch'];
     var settingsHtml = types.map(function (key) {
@@ -2575,6 +2626,7 @@
     return (
       '<h2 class="section-title">' + t('notif_title') + '</h2>' +
       '<p class="section-desc">' + t('notif_desc') + '</p>' +
+      renderBrowserNotifPermCard() +
       '<div class="grid-2">' +
       '<div class="card"><h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('notif_settings_title') + '</h3>' +
       '<div class="settings-list">' + settingsHtml + '</div></div>' +
@@ -3530,6 +3582,14 @@
     }
     if (action === 'export-backup') { exportBackupJson(); return; }
     if (action === 'import-backup') { document.getElementById('backup-file-input').click(); return; }
+    if (action === 'request-notif-permission') {
+      if (!browserNotifSupported()) return;
+      Notification.requestPermission().then(function () {
+        checkAndFireBrowserNotifications();
+        render();
+      });
+      return;
+    }
 
     // ----- Loans -----
     if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; render(); return; }
@@ -3773,6 +3833,10 @@
   });
 
   render();
+
+  setInterval(function () {
+    if (currentUser && state.openingBalance !== null) checkAndFireBrowserNotifications();
+  }, 60000);
 })();
 </script>
 </body>
