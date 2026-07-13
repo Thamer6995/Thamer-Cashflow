@@ -203,10 +203,21 @@
     outline:none;
   }
   .field input:focus, .field select:focus{ border-color:var(--success); }
-  .field input[type="date"]{ direction:ltr; text-align:right; }
-  .field input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(.7); cursor:pointer; }
   .field .err{ font-size:12px; color:var(--danger); margin-top:6px; min-height:0; }
   .warn-text{ font-size:12px; color:var(--warning); margin-top:6px; }
+
+  .date-field-wrap{ position:relative; }
+  .date-field-wrap input[type="date"]{
+    direction:ltr; color:transparent; -webkit-text-fill-color:transparent;
+  }
+  .date-field-wrap input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(.7); cursor:pointer; }
+  .date-field-wrap input[type="date"]:disabled{ opacity:.5; }
+  .date-display{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:flex-start;
+    direction:rtl; padding:0 34px 0 12px; pointer-events:none; color:var(--ink); font-size:14px; font-family:inherit;
+    overflow:hidden; white-space:nowrap;
+  }
+  .date-field-wrap input[type="date"]:disabled ~ .date-display{ color:var(--slate-soft); }
 
   .bank-edit-full{ grid-column:1 / -1; }
   #bank-edit-rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
@@ -688,6 +699,22 @@
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function formatDateArabic(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+    if (!m || m < 1 || m > 12 || !d) return dateStr;
+    return d + ' ' + MONTHS[m - 1] + ' ' + y;
+  }
+  function renderDateField(id, value, extraAttrs) {
+    return (
+      '<div class="date-field-wrap">' +
+      '<input type="date" id="' + id + '" value="' + (value || '') + '"' + (extraAttrs || '') + '>' +
+      '<div class="date-display" data-display-for="' + id + '">' + escapeHtml(formatDateArabic(value)) + '</div>' +
+      '</div>'
+    );
+  }
   function currentMonthKey() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
   function monthKeyOf(dateStr) { return dateStr.slice(0, 7); }
   function shiftMonth(monthKey, delta) {
@@ -1365,7 +1392,7 @@
       '</div>' +
       '<div class="field"><label>' + t('field_category') + '</label>' + quickCatChips + '<select id="qa-category">' + catOptions + '</select>' + catWarning + '</div>' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="qa-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('qa-date', todayStr()) + '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="qa-note"></div>' +
       '</div>' +
       '<div id="qa-err" class="err"></div>' +
@@ -1385,7 +1412,7 @@
       '<div class="field"><label>' + t('gate_amount_label') + '</label>' +
       '<input type="number" step="0.01" id="setup-amount" placeholder="0.00" autofocus></div>' +
       '<div class="field"><label>' + t('gate_date_label') + '</label>' +
-      '<input type="date" id="setup-date" value="' + todayStr() + '"></div>' +
+      renderDateField('setup-date', todayStr()) + '</div>' +
       '<div id="setup-err" class="err"></div>' +
       '<button type="submit" class="btn-primary">' + t('gate_submit') + '</button>' +
       '</form>' +
@@ -1498,7 +1525,7 @@
         '<form id="opening-edit-form" class="card stat-tile">' +
         '<div class="k">' + t('stat_opening') + '</div>' +
         '<div class="field" style="margin-bottom:8px;"><input type="number" step="0.01" id="opening-edit-amount" value="' + state.openingBalance + '"></div>' +
-        '<div class="field" style="margin-bottom:8px;"><input type="date" id="opening-edit-date" value="' + (state.openingBalanceDate || todayStr()) + '"></div>' +
+        '<div class="field" style="margin-bottom:8px;">' + renderDateField('opening-edit-date', state.openingBalanceDate || todayStr()) + '</div>' +
         '<div id="opening-edit-err" class="err"></div>' +
         '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('save') + '</button>' +
         '<button type="button" class="btn-ghost" data-action="cancel-edit-opening">' + t('cancel') + '</button></div>' +
@@ -1606,7 +1633,7 @@
       '</div>' +
       '<input type="hidden" id="tx-type" value="' + type + '">' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="tx-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('tx-date', date) + '</div>' +
       '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_category') + '</label><select id="tx-category">' + catOptions + '</select>' + catWarning + '</div>' +
@@ -1979,7 +2006,7 @@
       '</div>' +
       '<input type="hidden" id="card-tx-type" value="' + type + '">' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="card-tx-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('card-tx-date', date) + '</div>' +
       '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="card-tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="card-tx-note" value="' + escapeAttr(note) + '"></div>' +
@@ -2135,7 +2162,7 @@
       '<form id="loan-payment-form" class="card" data-loan-id="' + loan.id + '">' +
       '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingP ? t('loan_payment_form_title_edit') : t('loan_payment_form_title_new')) + '</h3>' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('field_date') + '</label><input type="date" id="loan-payment-date" value="' + date + '"></div>' +
+      '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('loan-payment-date', date) + '</div>' +
       '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="loan-payment-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="loan-payment-note" value="' + escapeAttr(note) + '"></div>' +
@@ -2428,7 +2455,7 @@
       '<div class="field"><label>' + t('investment_platform_label') + '</label><input type="text" id="inv-platform" placeholder="' + t('investment_platform_placeholder') + '" value="' + escapeAttr(platform) + '"></div>' +
       '<div class="field"><label>' + t('investment_amount_label') + '</label><input type="number" step="0.01" id="inv-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '<div class="field"><label>' + t('investment_maturity_label') + '</label>' +
-      '<input type="date" id="inv-maturity" value="' + (maturity || '') + '"' + (noMaturity ? ' disabled' : '') + '>' +
+      renderDateField('inv-maturity', maturity, noMaturity ? ' disabled' : '') +
       '<label class="no-maturity-row"><input type="checkbox" id="inv-no-maturity"' + (noMaturity ? ' checked' : '') + '> ' + t('no_maturity_label') + '</label>' +
       '</div>' +
       '<div id="inv-err" class="err"></div>' +
@@ -2977,6 +3004,11 @@
 
   app.addEventListener('change', function (e) {
     var el = e.target;
+    if (el.type === 'date') {
+      var displayEl = document.querySelector('[data-display-for="' + el.id + '"]');
+      if (displayEl) displayEl.textContent = formatDateArabic(el.value);
+      return;
+    }
     if (el.id === 'tx-filter-type' || el.id === 'tx-filter-category') {
       if (el.id === 'tx-filter-type') txFilterType = el.value;
       if (el.id === 'tx-filter-category') txFilterCategoryId = el.value;
@@ -3005,6 +3037,8 @@
       var maturityInput = document.getElementById('inv-maturity');
       maturityInput.disabled = el.checked;
       if (el.checked) maturityInput.value = '';
+      var maturityDisplay = document.querySelector('[data-display-for="inv-maturity"]');
+      if (maturityDisplay) maturityDisplay.textContent = formatDateArabic(maturityInput.value);
       return;
     }
     if (el.id === 'backup-file-input') {
