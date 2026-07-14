@@ -3784,9 +3784,30 @@
     }
   });
 
-  function attachFirestoreListener(uid) {
+  function attachFirestoreListener(uid, opts) {
+    opts = opts || {};
     if (firestoreUnsubscribe) firestoreUnsubscribe();
+    var pendingFirstCheck = !!opts.checkMigration;
     firestoreUnsubscribe = db.collection('users').doc(uid).onSnapshot(function (snap) {
+      if (pendingFirstCheck) {
+        pendingFirstCheck = false;
+        if (snap.exists) {
+          state = normalizeState(snap.data());
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          render();
+        } else {
+          var localSnapshotState = opts.localSnapshotState;
+          var hasLocalData = localSnapshotState && (localSnapshotState.openingBalance !== null || localSnapshotState.transactions.length > 0);
+          if (hasLocalData) {
+            pendingLocalMigration = localSnapshotState;
+          } else {
+            state = defaultState();
+            saveState();
+          }
+          render();
+        }
+        return;
+      }
       if (snap.metadata.hasPendingWrites) return;
       if (!snap.exists) return;
       state = normalizeState(snap.data());
@@ -3794,6 +3815,8 @@
       render();
     }, function (err) {
       console.error('Firestore listener error', err);
+      authError = t('auth_err_load_failed');
+      render();
     });
   }
 
@@ -3806,30 +3829,7 @@
       return;
     }
     currentUser = user;
-    var localSnapshotState = state;
-    db.collection('users').doc(user.uid).get().then(function (doc) {
-      if (doc.exists) {
-        state = normalizeState(doc.data());
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        attachFirestoreListener(user.uid);
-        render();
-      } else {
-        var hasLocalData = localSnapshotState.openingBalance !== null || localSnapshotState.transactions.length > 0;
-        if (hasLocalData) {
-          pendingLocalMigration = localSnapshotState;
-          render();
-        } else {
-          state = defaultState();
-          attachFirestoreListener(user.uid);
-          saveState();
-          render();
-        }
-      }
-    }).catch(function (err) {
-      console.error('Failed to load user data', err);
-      authError = t('auth_err_load_failed');
-      render();
-    });
+    attachFirestoreListener(user.uid, { checkMigration: true, localSnapshotState: state });
   });
 
   render();
