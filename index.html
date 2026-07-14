@@ -725,12 +725,19 @@
   }
 
   var firestoreSyncTimer = null;
+  var stateVersion = 0;
+  var syncedVersion = -1;
   function syncStateToFirestore() {
     if (!currentUser) return;
     if (firestoreSyncTimer) clearTimeout(firestoreSyncTimer);
     firestoreSyncTimer = setTimeout(function () {
+      var versionAtSend = stateVersion;
       db.collection('users').doc(currentUser.uid).set(state).then(function () {
-        hasUnsyncedLocalChanges = false;
+        if (versionAtSend > syncedVersion) syncedVersion = versionAtSend;
+        // only clear the "unsynced" flag once the write that resolved actually
+        // covers the latest change — an earlier in-flight write resolving after
+        // a newer edit was made must not mark things as fully synced yet.
+        if (syncedVersion >= stateVersion) hasUnsyncedLocalChanges = false;
       }).catch(function (err) {
         console.error('Firestore sync failed', err);
       });
@@ -739,6 +746,7 @@
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    stateVersion++;
     hasUnsyncedLocalChanges = true;
     syncStateToFirestore();
   }
