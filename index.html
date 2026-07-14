@@ -724,21 +724,28 @@
     }
   }
 
+  // Revision-based sync: every write carries a monotonically increasing
+  // revision number. Incoming data (whether from the initial load or a
+  // realtime update) is only ever applied if its revision is >= what we
+  // already have locally. This makes "is this data newer than mine" an
+  // explicit comparison instead of an inferred guess from timers/flags,
+  // which is what kept letting stale snapshots silently overwrite newer
+  // local edits in earlier attempts at this.
+  var REV_KEY = 'thamer-cashflow-rev-v1';
+  var localRev = parseInt(localStorage.getItem(REV_KEY), 10) || 0;
+
+  function persistRev(rev) {
+    localRev = rev;
+    localStorage.setItem(REV_KEY, String(rev));
+  }
+
   var firestoreSyncTimer = null;
-  var stateVersion = 0;
-  var syncedVersion = -1;
   function syncStateToFirestore() {
     if (!currentUser) return;
     if (firestoreSyncTimer) clearTimeout(firestoreSyncTimer);
     firestoreSyncTimer = setTimeout(function () {
-      var versionAtSend = stateVersion;
-      db.collection('users').doc(currentUser.uid).set(state).then(function () {
-        if (versionAtSend > syncedVersion) syncedVersion = versionAtSend;
-        // only clear the "unsynced" flag once the write that resolved actually
-        // covers the latest change — an earlier in-flight write resolving after
-        // a newer edit was made must not mark things as fully synced yet.
-        if (syncedVersion >= stateVersion) hasUnsyncedLocalChanges = false;
-      }).catch(function (err) {
+      var payload = Object.assign({}, state, { _rev: localRev });
+      db.collection('users').doc(currentUser.uid).set(payload).catch(function (err) {
         console.error('Firestore sync failed', err);
       });
     }, 600);
@@ -746,9 +753,19 @@
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    stateVersion++;
-    hasUnsyncedLocalChanges = true;
+    persistRev(localRev + 1);
     syncStateToFirestore();
+  }
+
+  // Applies incoming Firestore data only if it's not older than what we
+  // already have. Returns true if applied, false if rejected as stale.
+  function applyIncomingSnapshotData(data) {
+    var incomingRev = (data && typeof data._rev === 'number') ? data._rev : 0;
+    if (incomingRev < localRev) return false;
+    state = normalizeState(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    persistRev(incomingRev);
+    return true;
   }
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
@@ -1406,7 +1423,6 @@
   var authError = '';
   var pendingLocalMigration = null;
   var firestoreUnsubscribe = null;
-  var hasUnsyncedLocalChanges = false;
 
   // ---------------- App state ----------------
   var state = loadState();
@@ -3819,14 +3835,11 @@
       if (pendingFirstCheck) {
         pendingFirstCheck = false;
         if (snap.exists) {
-          if (hasUnsyncedLocalChanges) {
-            // a change was made locally before this connection confirmed (e.g. during the
-            // instant-cached-view window before auth finished checking) — push it instead of
-            // discarding it in favor of the server's older snapshot.
+          var applied = applyIncomingSnapshotData(snap.data());
+          if (!applied) {
+            // our local copy is already newer than the server's (e.g. edits made
+            // before this connection confirmed) — push it instead of losing it.
             saveState();
-          } else {
-            state = normalizeState(snap.data());
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           }
           render();
         } else {
@@ -3842,12 +3855,8 @@
         }
         return;
       }
-      if (snap.metadata.hasPendingWrites) return;
       if (!snap.exists) return;
-      if (hasUnsyncedLocalChanges) return;
-      state = normalizeState(snap.data());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      render();
+      if (applyIncomingSnapshotData(snap.data())) render();
     }, function (err) {
       console.error('Firestore listener error', err);
       authError = t('auth_err_load_failed');
