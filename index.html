@@ -729,7 +729,9 @@
     if (!currentUser) return;
     if (firestoreSyncTimer) clearTimeout(firestoreSyncTimer);
     firestoreSyncTimer = setTimeout(function () {
-      db.collection('users').doc(currentUser.uid).set(state).catch(function (err) {
+      db.collection('users').doc(currentUser.uid).set(state).then(function () {
+        hasUnsyncedLocalChanges = false;
+      }).catch(function (err) {
         console.error('Firestore sync failed', err);
       });
     }, 600);
@@ -737,6 +739,7 @@
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    hasUnsyncedLocalChanges = true;
     syncStateToFirestore();
   }
 
@@ -1395,6 +1398,7 @@
   var authError = '';
   var pendingLocalMigration = null;
   var firestoreUnsubscribe = null;
+  var hasUnsyncedLocalChanges = false;
 
   // ---------------- App state ----------------
   var state = loadState();
@@ -3807,8 +3811,15 @@
       if (pendingFirstCheck) {
         pendingFirstCheck = false;
         if (snap.exists) {
-          state = normalizeState(snap.data());
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          if (hasUnsyncedLocalChanges) {
+            // a change was made locally before this connection confirmed (e.g. during the
+            // instant-cached-view window before auth finished checking) — push it instead of
+            // discarding it in favor of the server's older snapshot.
+            saveState();
+          } else {
+            state = normalizeState(snap.data());
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          }
           render();
         } else {
           var localSnapshotState = opts.localSnapshotState;
@@ -3825,6 +3836,7 @@
       }
       if (snap.metadata.hasPendingWrites) return;
       if (!snap.exists) return;
+      if (hasUnsyncedLocalChanges) return;
       state = normalizeState(snap.data());
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       render();
