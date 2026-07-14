@@ -1440,6 +1440,15 @@
 
   function render() {
     applyDocumentTitle();
+    if (authLoading && !currentUser && state.openingBalance !== null) {
+      // optimistic: show the last known cached data instantly while auth
+      // confirms quietly in the background, instead of blocking on a spinner.
+      // If it turns out no one is actually logged in, the next render() from
+      // onAuthStateChanged (authLoading=false, currentUser=null) replaces this
+      // with the login screen.
+      renderAuthenticatedApp(false);
+      return;
+    }
     if (authLoading || !currentUser) {
       app.innerHTML = renderAuthScreen();
       return;
@@ -1452,11 +1461,17 @@
       app.innerHTML = renderGate();
       return;
     }
-    if (lastRecurringCheckDate !== todayStr()) {
-      generateDueRecurringTransactions();
-      lastRecurringCheckDate = todayStr();
+    renderAuthenticatedApp(true);
+  }
+
+  function renderAuthenticatedApp(confirmed) {
+    if (confirmed) {
+      if (lastRecurringCheckDate !== todayStr()) {
+        generateDueRecurringTransactions();
+        lastRecurringCheckDate = todayStr();
+      }
+      maybeCheckBrowserNotifications();
     }
-    maybeCheckBrowserNotifications();
     app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>' + renderQuickAdd();
   }
 
