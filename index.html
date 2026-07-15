@@ -812,6 +812,22 @@
   }
   function escapeAttr(str) { return escapeHtml(str).replace(/`/g, '&#96;'); }
 
+  var ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  var EXTENDED_ARABIC_INDIC_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+  function normalizeDigits(str) {
+    return String(str).replace(/[٠-٩۰-۹]/g, function (c) {
+      var idx = ARABIC_INDIC_DIGITS.indexOf(c);
+      if (idx === -1) idx = EXTENDED_ARABIC_INDIC_DIGITS.indexOf(c);
+      return idx === -1 ? c : String(idx);
+    });
+  }
+  // Reads a numeric field's value normalized to Western digits regardless of
+  // what the on-screen keyboard actually typed (Arabic-Indic keyboards are
+  // common on Arabic-locale devices). This is the authoritative place
+  // normalization happens — live in-field preview is a bonus, not relied on.
+  function fieldFloat(id) { return parseFloat(normalizeDigits(document.getElementById(id).value)); }
+  function fieldInt(id) { return parseInt(normalizeDigits(document.getElementById(id).value), 10); }
+
   // ---------------- i18n ----------------
   var I18N = {
       brand_title: 'متابعة التدفقات النقدية الشهرية',
@@ -1613,7 +1629,7 @@
       '<button type="button" class="type-btn' + (quickAddType === 'expense' ? ' active-expense' : '') + '" data-action="qa-set-type" data-type="expense">' + t('type_expense') + '</button>' +
       '</div>' +
       '<div class="qa-amount-row">' +
-      '<div class="qa-amount-field"><input type="number" step="0.01" inputmode="decimal" id="qa-amount" placeholder="0.00"></div>' +
+      '<div class="qa-amount-field"><input type="text" inputmode="decimal" step="0.01" inputmode="decimal" id="qa-amount" placeholder="0.00"></div>' +
       '<button type="submit" class="qa-inline-save ' + saveCls + '" title="' + t('btn_add_tx') + '" aria-label="' + t('btn_add_tx') + '">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"></polyline></svg>' +
       '</button>' +
@@ -1638,7 +1654,7 @@
       '<p class="desc">' + t('gate_desc') + '</p>' +
       '<form id="setup-form">' +
       '<div class="field"><label>' + t('gate_amount_label') + '</label>' +
-      '<input type="number" step="0.01" id="setup-amount" placeholder="0.00" autofocus></div>' +
+      '<input type="text" inputmode="decimal" step="0.01" id="setup-amount" placeholder="0.00" autofocus></div>' +
       '<div class="field"><label>' + t('gate_date_label') + '</label>' +
       renderDateField('setup-date', todayStr()) + '</div>' +
       '<div id="setup-err" class="err"></div>' +
@@ -1716,7 +1732,7 @@
       return (
         '<div class="bank-row" data-row-id="' + r.id + '">' +
         '<input type="text" class="bank-row-label" placeholder="' + t('bank_account_label_placeholder') + '" value="' + escapeAttr(r.label || '') + '">' +
-        '<input type="number" step="0.01" class="bank-row-amount" placeholder="' + t('bank_account_amount_placeholder') + '" value="' + (r.amount === '' || r.amount == null ? '' : r.amount) + '">' +
+        '<input type="text" inputmode="decimal" step="0.01" class="bank-row-amount" placeholder="' + t('bank_account_amount_placeholder') + '" value="' + (r.amount === '' || r.amount == null ? '' : r.amount) + '">' +
         '<button type="button" class="icon-btn danger" data-action="remove-bank-row" data-row-id="' + r.id + '" title="delete">🗑️</button>' +
         '</div>'
       );
@@ -1754,7 +1770,7 @@
       openingTile = (
         '<form id="opening-edit-form" class="card stat-tile">' +
         '<div class="k">' + t('stat_opening') + '</div>' +
-        '<div class="field" style="margin-bottom:8px;"><input type="number" step="0.01" id="opening-edit-amount" value="' + state.openingBalance + '"></div>' +
+        '<div class="field" style="margin-bottom:8px;"><input type="text" inputmode="decimal" step="0.01" id="opening-edit-amount" value="' + state.openingBalance + '"></div>' +
         '<div class="field" style="margin-bottom:8px;">' + renderDateField('opening-edit-date', state.openingBalanceDate || todayStr()) + '</div>' +
         '<div id="opening-edit-err" class="err"></div>' +
         '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('save') + '</button>' +
@@ -1864,7 +1880,7 @@
       '<input type="hidden" id="tx-type" value="' + type + '">' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('tx-date', date) + '</div>' +
-      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="text" inputmode="decimal" step="0.01" id="tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_category') + '</label><select id="tx-category">' + catOptions + '</select>' + catWarning + '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="tx-note" value="' + escapeAttr(note) + '"></div>' +
@@ -2030,7 +2046,7 @@
       return (
         '<div class="budget-row">' +
         '<div class="name">' + escapeHtml(c.name) + '</div>' +
-        '<div class="input-cell"><input type="number" step="0.01" min="0" placeholder="0.00" value="' + (state.budgets[c.id] || '') + '" data-action="set-budget" data-id="' + c.id + '"></div>' +
+        '<div class="input-cell"><input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="' + (state.budgets[c.id] || '') + '" data-action="set-budget" data-id="' + c.id + '"></div>' +
         '<div class="vs"><div class="nums"><span>' + statusHtml + '</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div></div>' +
         '</div>'
@@ -2145,7 +2161,7 @@
       '<form id="card-form" class="card" style="margin-bottom:16px;">' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('card_name_label') + '</label><input type="text" id="card-name" placeholder="' + t('card_name_placeholder') + '"></div>' +
-      '<div class="field"><label>' + t('card_limit_label') + '</label><input type="number" step="0.01" id="card-limit" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('card_limit_label') + '</label><input type="text" inputmode="decimal" step="0.01" id="card-limit" placeholder="0.00"></div>' +
       '</div>' +
       '<div id="card-err" class="err"></div>' +
       '<button type="submit" class="btn-primary btn-block">' + t('add_card_btn') + '</button>' +
@@ -2167,7 +2183,7 @@
             '<div class="card card-tile">' +
             '<div class="card-edit-fields">' +
             '<input id="edit-card-name" value="' + escapeAttr(c.name) + '">' +
-            '<input id="edit-card-limit" type="number" step="0.01" value="' + c.limit + '">' +
+            '<input id="edit-card-limit" type="text" inputmode="decimal" step="0.01" value="' + c.limit + '">' +
             '</div>' +
             '<div id="card-edit-err" class="err" style="margin-bottom:10px;"></div>' +
             '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-card-edit" data-id="' + c.id + '">' + t('save') + '</button>' +
@@ -2237,7 +2253,7 @@
       '<input type="hidden" id="card-tx-type" value="' + type + '">' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('card-tx-date', date) + '</div>' +
-      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="card-tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="text" inputmode="decimal" step="0.01" id="card-tx-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="card-tx-note" value="' + escapeAttr(note) + '"></div>' +
       '<div id="card-tx-err" class="err"></div>' +
@@ -2304,11 +2320,11 @@
       '<form id="loan-form" class="card" style="margin-bottom:16px;">' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('loan_name_label') + '</label><input type="text" id="loan-name" placeholder="' + t('loan_name_placeholder') + '"></div>' +
-      '<div class="field"><label>' + t('loan_principal_label') + '</label><input type="number" step="0.01" id="loan-principal" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('loan_principal_label') + '</label><input type="text" inputmode="decimal" step="0.01" id="loan-principal" placeholder="0.00"></div>' +
       '</div>' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('loan_installment_label') + '</label><input type="number" step="0.01" id="loan-installment" placeholder="0.00"></div>' +
-      '<div class="field"><label>' + t('loan_term_label') + '</label><input type="number" step="1" min="1" id="loan-term" placeholder="12"></div>' +
+      '<div class="field"><label>' + t('loan_installment_label') + '</label><input type="text" inputmode="decimal" step="0.01" id="loan-installment" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('loan_term_label') + '</label><input type="text" inputmode="decimal" step="1" min="1" id="loan-term" placeholder="12"></div>' +
       '</div>' +
       '<div id="loan-err" class="err"></div>' +
       '<button type="submit" class="btn-primary btn-block">' + t('add_loan_btn') + '</button>' +
@@ -2329,7 +2345,7 @@
             '<div class="card card-tile">' +
             '<div class="card-edit-fields">' +
             '<input id="edit-loan-name" value="' + escapeAttr(l.name) + '">' +
-            '<input id="edit-loan-installment" type="number" step="0.01" value="' + l.monthlyInstallment + '">' +
+            '<input id="edit-loan-installment" type="text" inputmode="decimal" step="0.01" value="' + l.monthlyInstallment + '">' +
             '</div>' +
             '<div id="loan-edit-err" class="err" style="margin-bottom:10px;"></div>' +
             '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-loan-edit" data-id="' + l.id + '">' + t('save') + '</button>' +
@@ -2393,7 +2409,7 @@
       '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingP ? t('loan_payment_form_title_edit') : t('loan_payment_form_title_new')) + '</h3>' +
       '<div class="grid-2">' +
       '<div class="field"><label>' + t('field_date') + '</label>' + renderDateField('loan-payment-date', date) + '</div>' +
-      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="loan-payment-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="text" inputmode="decimal" step="0.01" id="loan-payment-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="loan-payment-note" value="' + escapeAttr(note) + '"></div>' +
       '<div id="loan-payment-err" class="err"></div>' +
@@ -2465,8 +2481,8 @@
       '</div>' +
       '<input type="hidden" id="recurring-type" value="' + recurringAddType + '">' +
       '<div class="grid-2">' +
-      '<div class="field"><label>' + t('field_amount') + '</label><input type="number" step="0.01" id="recurring-amount" placeholder="0.00"></div>' +
-      '<div class="field"><label>' + t('recurring_day_label') + '</label><input type="number" step="1" min="1" max="31" id="recurring-day" placeholder="1"></div>' +
+      '<div class="field"><label>' + t('field_amount') + '</label><input type="text" inputmode="decimal" step="0.01" id="recurring-amount" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('recurring_day_label') + '</label><input type="text" inputmode="decimal" step="1" min="1" max="31" id="recurring-day" placeholder="1"></div>' +
       '</div>' +
       '<div class="field"><label>' + t('field_category') + '</label><select id="recurring-category">' + catOptions + '</select></div>' +
       '<div class="field"><label>' + t('field_note') + '</label><input type="text" id="recurring-note"></div>' +
@@ -2496,8 +2512,8 @@
       '<button type="button" data-action="set-recurring-edit-type" data-type="expense" class="type-btn' + (rule.type === 'expense' ? ' active-expense' : '') + '">' + t('type_expense') + '</button>' +
       '</div>' +
       '<input type="hidden" id="edit-recurring-type" value="' + rule.type + '">' +
-      '<input id="edit-recurring-amount" type="number" step="0.01" value="' + rule.amount + '">' +
-      '<input id="edit-recurring-day" type="number" min="1" max="31" value="' + rule.dayOfMonth + '">' +
+      '<input id="edit-recurring-amount" type="text" inputmode="decimal" step="0.01" value="' + rule.amount + '">' +
+      '<input id="edit-recurring-day" type="text" inputmode="decimal" min="1" max="31" value="' + rule.dayOfMonth + '">' +
       '<select id="edit-recurring-category">' + editCatOptions + '</select>' +
       '<input id="edit-recurring-note" value="' + escapeAttr(rule.note || '') + '">' +
       '<div class="month-select-row">' +
@@ -2557,8 +2573,8 @@
       '<form id="sub-form" class="card" style="margin-bottom:16px;">' +
       '<div class="grid-3">' +
       '<div class="field"><label>' + t('sub_name_label') + '</label><input type="text" id="sub-name" placeholder="' + t('sub_name_placeholder') + '"></div>' +
-      '<div class="field"><label>' + t('sub_amount_label') + '</label><input type="number" step="0.01" id="sub-amount" placeholder="0.00"></div>' +
-      '<div class="field"><label>' + t('sub_day_label') + '</label><input type="number" step="1" min="1" max="31" id="sub-day" placeholder="1"></div>' +
+      '<div class="field"><label>' + t('sub_amount_label') + '</label><input type="text" inputmode="decimal" step="0.01" id="sub-amount" placeholder="0.00"></div>' +
+      '<div class="field"><label>' + t('sub_day_label') + '</label><input type="text" inputmode="decimal" step="1" min="1" max="31" id="sub-day" placeholder="1"></div>' +
       '</div>' +
       '<div id="sub-err" class="err"></div>' +
       '<button type="submit" class="btn-primary btn-block">' + t('add_sub_btn') + '</button>' +
@@ -2578,8 +2594,8 @@
             '<div class="sub-row">' +
             '<div class="card-edit-fields" style="flex:1;">' +
             '<input id="edit-sub-name" value="' + escapeAttr(sub.name) + '">' +
-            '<input id="edit-sub-amount" type="number" step="0.01" value="' + sub.amount + '">' +
-            '<input id="edit-sub-day" type="number" min="1" max="31" value="' + sub.billingDay + '">' +
+            '<input id="edit-sub-amount" type="text" inputmode="decimal" step="0.01" value="' + sub.amount + '">' +
+            '<input id="edit-sub-day" type="text" inputmode="decimal" min="1" max="31" value="' + sub.billingDay + '">' +
             '<div id="sub-edit-err" class="err"></div>' +
             '<div class="btn-row"><button class="btn-ghost" style="flex:1;" data-action="save-sub-edit" data-id="' + sub.id + '">' + t('save') + '</button>' +
             '<button class="btn-ghost" data-action="cancel-sub-edit">' + t('cancel') + '</button></div>' +
@@ -2704,7 +2720,7 @@
       '<h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + (editingInv ? t('investment_form_title_edit') : t('investment_form_title_new')) + '</h3>' +
       '<div class="field"><label>' + t('investment_type_label') + '</label><input type="text" id="inv-type" placeholder="' + t('investment_type_placeholder') + '" value="' + escapeAttr(type) + '"></div>' +
       '<div class="field"><label>' + t('investment_platform_label') + '</label><input type="text" id="inv-platform" placeholder="' + t('investment_platform_placeholder') + '" value="' + escapeAttr(platform) + '"></div>' +
-      '<div class="field"><label>' + t('investment_amount_label') + '</label><input type="number" step="0.01" id="inv-amount" placeholder="0.00" value="' + amount + '"></div>' +
+      '<div class="field"><label>' + t('investment_amount_label') + '</label><input type="text" inputmode="decimal" step="0.01" id="inv-amount" placeholder="0.00" value="' + amount + '"></div>' +
       '<div class="field"><label>' + t('investment_maturity_label') + '</label>' +
       renderDateField('inv-maturity', maturity, noMaturity ? ' disabled' : '') +
       '<label class="no-maturity-row"><input type="checkbox" id="inv-no-maturity"' + (noMaturity ? ' checked' : '') + '> ' + t('no_maturity_label') + '</label>' +
@@ -3013,7 +3029,7 @@
 
     if (form.id === 'qa-sheet') {
       e.preventDefault();
-      var qaAmount = parseFloat(document.getElementById('qa-amount').value);
+      var qaAmount = fieldFloat('qa-amount');
       var qaCategoryId = document.getElementById('qa-category').value;
       var qaDate = document.getElementById('qa-date').value;
       var qaNote = document.getElementById('qa-note').value.trim();
@@ -3055,7 +3071,7 @@
 
     if (form.id === 'opening-edit-form') {
       e.preventDefault();
-      var oAmount = parseFloat(document.getElementById('opening-edit-amount').value);
+      var oAmount = fieldFloat('opening-edit-amount');
       var oDate = document.getElementById('opening-edit-date').value;
       if (isNaN(oAmount)) {
         document.getElementById('opening-edit-err').textContent = t('err_invalid_balance');
@@ -3073,7 +3089,7 @@
       e.preventDefault();
       var type = document.getElementById('tx-type').value;
       var date = document.getElementById('tx-date').value;
-      var amount = parseFloat(document.getElementById('tx-amount').value);
+      var amount = fieldFloat('tx-amount');
       var categoryId = document.getElementById('tx-category').value;
       var note = document.getElementById('tx-note').value.trim();
       var errEl = document.getElementById('tx-err');
@@ -3113,7 +3129,7 @@
     if (form.id === 'card-form') {
       e.preventDefault();
       var cardName = document.getElementById('card-name').value.trim();
-      var cardLimit = parseFloat(document.getElementById('card-limit').value);
+      var cardLimit = fieldFloat('card-limit');
       var cardErrEl = document.getElementById('card-err');
       if (!cardName) { cardErrEl.textContent = t('err_card_name'); return; }
       if (isNaN(cardLimit) || cardLimit <= 0) { cardErrEl.textContent = t('err_card_limit'); return; }
@@ -3127,7 +3143,7 @@
       e.preventDefault();
       var cType = document.getElementById('card-tx-type').value;
       var cDate = document.getElementById('card-tx-date').value;
-      var cAmount = parseFloat(document.getElementById('card-tx-amount').value);
+      var cAmount = fieldFloat('card-tx-amount');
       var cNote = document.getElementById('card-tx-note').value.trim();
       var cErrEl = document.getElementById('card-tx-err');
 
@@ -3176,9 +3192,9 @@
     if (form.id === 'loan-form') {
       e.preventDefault();
       var lName = document.getElementById('loan-name').value.trim();
-      var lPrincipal = parseFloat(document.getElementById('loan-principal').value);
-      var lInstallment = parseFloat(document.getElementById('loan-installment').value);
-      var lTerm = parseInt(document.getElementById('loan-term').value, 10);
+      var lPrincipal = fieldFloat('loan-principal');
+      var lInstallment = fieldFloat('loan-installment');
+      var lTerm = fieldInt('loan-term');
       var lErrEl = document.getElementById('loan-err');
       if (!lName) { lErrEl.textContent = t('err_loan_name'); return; }
       if (isNaN(lPrincipal) || lPrincipal <= 0) { lErrEl.textContent = t('err_loan_principal'); return; }
@@ -3193,7 +3209,7 @@
     if (form.id === 'loan-payment-form') {
       e.preventDefault();
       var pDate = document.getElementById('loan-payment-date').value;
-      var pAmount = parseFloat(document.getElementById('loan-payment-amount').value);
+      var pAmount = fieldFloat('loan-payment-amount');
       var pNote = document.getElementById('loan-payment-note').value.trim();
       var pErrEl = document.getElementById('loan-payment-err');
       if (isNaN(pAmount) || pAmount <= 0) { pErrEl.textContent = t('err_amount'); return; }
@@ -3218,8 +3234,8 @@
     if (form.id === 'recurring-add-form') {
       e.preventDefault();
       var rType = document.getElementById('recurring-type').value;
-      var rAmount = parseFloat(document.getElementById('recurring-amount').value);
-      var rDay = parseInt(document.getElementById('recurring-day').value, 10);
+      var rAmount = fieldFloat('recurring-amount');
+      var rDay = fieldInt('recurring-day');
       var rCategoryId = document.getElementById('recurring-category').value;
       var rNote = document.getElementById('recurring-note').value.trim();
       var rMonths = Array.from(document.querySelectorAll('#recurring-add-months .month-chip.active')).map(function (el) { return parseInt(el.dataset.month, 10); });
@@ -3241,8 +3257,8 @@
     if (form.id === 'sub-form') {
       e.preventDefault();
       var sName = document.getElementById('sub-name').value.trim();
-      var sAmount = parseFloat(document.getElementById('sub-amount').value);
-      var sDay = parseInt(document.getElementById('sub-day').value, 10);
+      var sAmount = fieldFloat('sub-amount');
+      var sDay = fieldInt('sub-day');
       var sErrEl = document.getElementById('sub-err');
       if (!sName) { sErrEl.textContent = t('err_sub_name'); return; }
       if (isNaN(sAmount) || sAmount <= 0) { sErrEl.textContent = t('err_sub_amount'); return; }
@@ -3257,7 +3273,7 @@
       e.preventDefault();
       var invType = document.getElementById('inv-type').value.trim();
       var invPlatform = document.getElementById('inv-platform').value.trim();
-      var invAmount = parseFloat(document.getElementById('inv-amount').value);
+      var invAmount = fieldFloat('inv-amount');
       var invNoMaturity = document.getElementById('inv-no-maturity').checked;
       var invMaturityRaw = document.getElementById('inv-maturity').value;
       var invErrEl = document.getElementById('inv-err');
@@ -3296,6 +3312,13 @@
 
   app.addEventListener('change', function (e) {
     var el = e.target;
+    if (el.getAttribute && el.getAttribute('inputmode') === 'decimal') {
+      // cosmetic cleanup once the user leaves the field — correctness itself
+      // doesn't depend on this, since fieldFloat()/fieldInt() normalize again
+      // at read time regardless of what's on screen.
+      var normalized = normalizeDigits(el.value);
+      if (normalized !== el.value) el.value = normalized;
+    }
     if (el.type === 'date') {
       var displayEl = document.querySelector('[data-display-for="' + el.id + '"]');
       if (displayEl) displayEl.textContent = formatDateArabic(el.value);
@@ -3514,7 +3537,7 @@
     if (action === 'cancel-card-edit') { editingCardId = null; render(); return; }
     if (action === 'save-card-edit') {
       var cName = document.getElementById('edit-card-name').value.trim();
-      var cLimit = parseFloat(document.getElementById('edit-card-limit').value);
+      var cLimit = fieldFloat('edit-card-limit');
       var editErrEl = document.getElementById('card-edit-err');
       if (!cName) { editErrEl.textContent = t('err_card_name'); return; }
       if (isNaN(cLimit) || cLimit <= 0) { editErrEl.textContent = t('err_card_limit'); return; }
@@ -3641,7 +3664,7 @@
     if (action === 'cancel-loan-edit') { editingLoanId = null; render(); return; }
     if (action === 'save-loan-edit') {
       var loanName = document.getElementById('edit-loan-name').value.trim();
-      var loanInstallment = parseFloat(document.getElementById('edit-loan-installment').value);
+      var loanInstallment = fieldFloat('edit-loan-installment');
       var loanEditErrEl = document.getElementById('loan-edit-err');
       if (!loanName) { loanEditErrEl.textContent = t('err_loan_name'); return; }
       if (isNaN(loanInstallment) || loanInstallment <= 0) { loanEditErrEl.textContent = t('err_loan_installment'); return; }
@@ -3733,8 +3756,8 @@
     if (action === 'save-recurring-edit') {
       var svId = btn.dataset.id;
       var svType = document.getElementById('edit-recurring-type').value;
-      var svAmount = parseFloat(document.getElementById('edit-recurring-amount').value);
-      var svDay = parseInt(document.getElementById('edit-recurring-day').value, 10);
+      var svAmount = fieldFloat('edit-recurring-amount');
+      var svDay = fieldInt('edit-recurring-day');
       var svCategoryId = document.getElementById('edit-recurring-category').value;
       var svNote = document.getElementById('edit-recurring-note').value.trim();
       var svMonths = Array.from(document.querySelectorAll('#recurring-edit-months .month-chip.active')).map(function (el) { return parseInt(el.dataset.month, 10); });
@@ -3775,8 +3798,8 @@
     if (action === 'cancel-sub-edit') { editingSubId = null; render(); return; }
     if (action === 'save-sub-edit') {
       var subName = document.getElementById('edit-sub-name').value.trim();
-      var subAmount = parseFloat(document.getElementById('edit-sub-amount').value);
-      var subDay = parseInt(document.getElementById('edit-sub-day').value, 10);
+      var subAmount = fieldFloat('edit-sub-amount');
+      var subDay = fieldInt('edit-sub-day');
       var subEditErrEl = document.getElementById('sub-edit-err');
       if (!subName) { subEditErrEl.textContent = t('err_sub_name'); return; }
       if (isNaN(subAmount) || subAmount <= 0) { subEditErrEl.textContent = t('err_sub_amount'); return; }
