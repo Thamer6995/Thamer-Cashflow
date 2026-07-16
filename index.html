@@ -645,12 +645,14 @@
     box-shadow:1px 0 0 var(--line); min-width:170px;
   }
   table.fc-table thead th.fc-label{ background:var(--card-alt); z-index:3; }
-  table.fc-table tr.fc-total td{ font-weight:700; color:var(--ink); background:rgba(255,255,255,.03); }
+  table.fc-table tr.fc-total td{ font-weight:700; background:rgba(255,255,255,.03); }
+  table.fc-table tr.fc-total td.fc-label{ color:var(--ink); }
   table.fc-table tr.fc-total td.fc-label{ background:var(--card); }
   table.fc-table .fc-f{ color:var(--slate); }
   table.fc-table .fc-a{ color:var(--ink-soft); font-weight:600; }
-  table.fc-table .fc-a.positive{ color:var(--success); }
-  table.fc-table .fc-a.negative{ color:var(--danger); }
+  table.fc-table .fc-pos{ color:var(--success); }
+  table.fc-table .fc-neg{ color:var(--danger); }
+  table.fc-table .fc-zero{ color:var(--ink); }
   table.fc-table .fc-dim{ color:var(--slate-soft); font-weight:400; }
   table.fc-table td.fc-cur, table.fc-table th.fc-cur{ background:rgba(52,211,153,.09); }
   table.fc-table thead th.fc-cur{ background:rgba(52,211,153,.16); }
@@ -1137,16 +1139,10 @@
 
       tab_forecast: 'التوقعات السنوية',
       forecast_title: 'التوقعات السنوية للتدفقات النقدية',
-      forecast_year_label: 'سنة {year}',
       forecast_col_forecast: 'متوقع',
       forecast_col_actual: 'فعلي',
       forecast_dash: '—',
       forecast_export_btn: '⬇️ تصدير التوقعات',
-      forecast_kpi_forecast_net: 'صافي التدفق المتوقع (السنة كاملة)',
-      forecast_kpi_actual_net: 'صافي التدفق الفعلي (حتى اليوم)',
-      forecast_kpi_yearend: 'الرصيد المتوقع نهاية السنة',
-      forecast_kpi_variance: 'الفرق بين الفعلي والمتوقع (لغاية اليوم)',
-      forecast_kpi_negative_months: 'أشهر برصيد ختامي متوقع سالب',
       forecast_section_opening: 'الرصيد الافتتاحي',
       forecast_section_income: 'الإيرادات',
       forecast_section_expense: 'المصروفات',
@@ -1158,10 +1154,6 @@
       forecast_row_net: 'صافي الشهر',
       forecast_row_closing: 'الرصيد الختامي',
       forecast_no_categories: 'لا توجد بنود مضافة بعد',
-      forecast_alerts_title: 'تنبيهات ذكية',
-      forecast_no_alerts: 'لا توجد تنبيهات حاليًا — التوقعات ضمن المعدل الطبيعي',
-      forecast_alert_negative: 'الرصيد المتوقع في نهاية {month} سيصبح سالبًا بمقدار {amount}',
-      forecast_alert_variance: 'مصروفات {month} الفعلية تجاوزت المتوقع بنسبة {pct}%',
       forecast_methodology_note: 'يعتمد "المتوقع" على العمليات المتكررة المُجدولة لكل بند، وعند عدم توفرها على الميزانية الشهرية المحددة له. أما "الفعلي" فهو مجموع العمليات الحقيقية المسجّلة في التطبيق لنفس البند والشهر. لا تُستخدم أي أرقام افتراضية أو وهمية في هذه الصفحة.'
   };
 
@@ -1420,41 +1412,11 @@
       };
     });
 
-    // KPIs
-    var yearForecastNet = monthRows.reduce(function (s, m) { return s + m.netForecast; }, 0);
-    var elapsedMonths = monthRows.filter(function (m) { return !m.isFuture; });
-    var yearActualNetToDate = elapsedMonths.reduce(function (s, m) { return s + m.netActual; }, 0);
-    var yearEndClosingForecast = monthRows[monthRows.length - 1].closingForecast;
-    var varianceToDate = elapsedMonths.reduce(function (s, m) { return s + (m.netActual - m.netForecast); }, 0);
-    var negativeMonths = monthRows.filter(function (m) { return m.closingForecast < 0; });
-
-    // Alerts
-    var alerts = [];
-    monthRows.forEach(function (m) {
-      if (m.closingForecast < 0) {
-        alerts.push({ level: 'danger', text: tf('forecast_alert_negative', { month: formatMonthLabel(m.monthKey), amount: fcFormatCurrency(m.closingForecast) }) });
-      }
-    });
-    elapsedMonths.forEach(function (m) {
-      if (m.totalOutflowsForecast > 0 && m.totalOutflowsActual > m.totalOutflowsForecast * 1.15) {
-        var pct = Math.round(((m.totalOutflowsActual - m.totalOutflowsForecast) / m.totalOutflowsForecast) * 100);
-        alerts.push({ level: 'warning', text: tf('forecast_alert_variance', { month: formatMonthLabel(m.monthKey), pct: pct }) });
-      }
-    });
-
     return {
       year: year,
       months: monthRows,
       incomeCats: incomeCats,
-      expenseCats: expenseCats,
-      kpis: {
-        yearForecastNet: yearForecastNet,
-        yearActualNetToDate: yearActualNetToDate,
-        yearEndClosingForecast: yearEndClosingForecast,
-        varianceToDate: varianceToDate,
-        negativeMonthsCount: negativeMonths.length
-      },
-      alerts: alerts
+      expenseCats: expenseCats
     };
   }
 
@@ -2441,17 +2403,31 @@
 
   function fcCurCls(isCurrent) { return isCurrent ? ' fc-cur' : ''; }
 
+  // Sign-based coloring: negative = red, positive = green, exactly zero =
+  // white "-" (distinct from the "—" dash used for "no data source").
+  function fcValueClass(amount) {
+    var rounded = Math.round(amount);
+    if (rounded === 0) return 'fc-zero';
+    return rounded > 0 ? 'fc-pos' : 'fc-neg';
+  }
+  function fcValueText(amount) {
+    return Math.round(amount) === 0 ? '-' : fcFormatCurrency(amount);
+  }
+
   function fcLineCell(cell, isCurrent) {
-    var fText = (cell.forecast === null || cell.forecast === undefined) ? t('forecast_dash') : fcFormatCurrency(cell.forecast);
-    var noActual = cell.actual === null || cell.actual === undefined;
-    var aText = noActual ? t('forecast_dash') : fcFormatCurrency(cell.actual);
-    var aCls = 'fc-a' + (noActual ? ' fc-dim' : '') + fcCurCls(isCurrent);
-    return '<td class="fc-f' + fcCurCls(isCurrent) + '">' + fText + '</td><td class="' + aCls + '">' + aText + '</td>';
+    var hasForecast = cell.forecast !== null && cell.forecast !== undefined;
+    var fText = hasForecast ? fcValueText(cell.forecast) : t('forecast_dash');
+    var fCls = 'fc-f' + (hasForecast ? ' ' + fcValueClass(cell.forecast) : ' fc-dim') + fcCurCls(isCurrent);
+    var hasActual = cell.actual !== null && cell.actual !== undefined;
+    var aText = hasActual ? fcValueText(cell.actual) : t('forecast_dash');
+    var aCls = 'fc-a' + (hasActual ? ' ' + fcValueClass(cell.actual) : ' fc-dim') + fcCurCls(isCurrent);
+    return '<td class="' + fCls + '">' + fText + '</td><td class="' + aCls + '">' + aText + '</td>';
   }
 
   function fcTotalCell(forecastVal, actualVal, isCurrent) {
-    var aCls = 'fc-a' + (actualVal >= 0 ? ' positive' : ' negative') + fcCurCls(isCurrent);
-    return '<td class="fc-f' + fcCurCls(isCurrent) + '">' + fcFormatCurrency(forecastVal) + '</td><td class="' + aCls + '">' + fcFormatCurrency(actualVal) + '</td>';
+    var fCls = 'fc-f ' + fcValueClass(forecastVal) + fcCurCls(isCurrent);
+    var aCls = 'fc-a ' + fcValueClass(actualVal) + fcCurCls(isCurrent);
+    return '<td class="' + fCls + '">' + fcValueText(forecastVal) + '</td><td class="' + aCls + '">' + fcValueText(actualVal) + '</td>';
   }
 
   function renderForecastLineRow(rowKey, label, months, todayKey, cellsAccessor, sectionCollapsed) {
@@ -2474,36 +2450,6 @@
       '<tr class="fc-section-head-row' + (collapsed ? ' collapsed' : '') + '" data-action="fc-toggle-section" data-section-key="' + sectionKey + '">' +
       '<td colspan="' + totalColumns + '"><span class="chev">▾</span>' + escapeHtml(title) + '</td></tr>'
     );
-  }
-
-  function renderForecastKpis(data) {
-    var k = data.kpis;
-    function tile(label, val) {
-      var cls = val >= 0 ? 'positive' : 'negative';
-      return '<div class="card stat-tile"><div class="k">' + label + '</div><div class="v ' + cls + '">' + fcFormatCurrency(val) + '</div></div>';
-    }
-    return (
-      '<div class="grid-4">' +
-      tile(t('forecast_kpi_forecast_net'), k.yearForecastNet) +
-      tile(t('forecast_kpi_actual_net'), k.yearActualNetToDate) +
-      tile(t('forecast_kpi_yearend'), k.yearEndClosingForecast) +
-      tile(t('forecast_kpi_variance'), k.varianceToDate) +
-      '<div class="card stat-tile"><div class="k">' + t('forecast_kpi_negative_months') + '</div><div class="v ' + (k.negativeMonthsCount > 0 ? 'negative' : '') + '">' + k.negativeMonthsCount + '</div></div>' +
-      '</div>'
-    );
-  }
-
-  function renderForecastAlerts(data) {
-    var items;
-    if (data.alerts.length === 0) {
-      items = '<p class="section-desc">' + t('forecast_no_alerts') + '</p>';
-    } else {
-      items = data.alerts.map(function (a) {
-        var icon = a.level === 'danger' ? '🔴' : (a.level === 'warning' ? '🟡' : 'ℹ️');
-        return '<div class="alert-item ' + (a.level === 'info' ? '' : a.level) + '"><span class="icon">' + icon + '</span><div class="body"><div class="msg">' + escapeHtml(a.text) + '</div></div></div>';
-      }).join('');
-    }
-    return '<div class="card" style="margin-bottom:14px;"><h3 style="margin:0 0 12px;font-size:14px;">' + t('forecast_alerts_title') + '</h3>' + items + '</div>';
   }
 
   function renderForecastTable(data) {
@@ -2563,8 +2509,6 @@
       '<div class="fc-actions"><h2 class="section-title" style="margin:0;">' + t('forecast_title') + ' (' + rangeLabel + ')</h2>' +
       '<button class="export-btn" data-action="export-forecast">' + t('forecast_export_btn') + '</button></div>' +
       '<p class="fc-note">' + escapeHtml(t('forecast_methodology_note')) + '</p>' +
-      renderForecastKpis(data) +
-      renderForecastAlerts(data) +
       renderForecastTable(data)
     );
   }
