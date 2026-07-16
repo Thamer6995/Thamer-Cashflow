@@ -630,6 +630,42 @@
     html[dir="rtl"] .switch input:checked + .track::before{ transform:translateX(-19px); }
     html[dir="ltr"] .switch input:checked + .track::before{ transform:translateX(19px); }
   }
+
+  /* ---------- Annual Forecast ---------- */
+  .fc-note{ font-size:12px; color:var(--slate); line-height:1.7; margin:0 0 14px; padding:12px 14px; background:var(--card-alt); border-radius:11px; border:1px solid var(--line); }
+  .fc-actions{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .fc-hidden-banner{ font-size:12px; color:var(--slate); padding:2px 0 12px; }
+  .fc-hidden-banner button{ appearance:none; border:none; background:none; color:var(--success); cursor:pointer; font-family:inherit; font-size:12px; text-decoration:underline; padding:0; }
+  .fc-table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:var(--radius); }
+  table.fc-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.fc-table th, table.fc-table td{ padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center; }
+  table.fc-table thead th{ font-size:11px; font-weight:700; color:var(--slate); background:var(--card-alt); position:sticky; top:0; z-index:1; }
+  table.fc-table tbody tr:last-child td{ border-bottom:none; }
+  table.fc-table tbody tr:hover td{ background:var(--card-alt); }
+  table.fc-table td.fc-label, table.fc-table th.fc-label{
+    position:sticky; inset-inline-start:0; z-index:2; text-align:start; background:var(--card);
+    box-shadow:1px 0 0 var(--line); min-width:170px;
+  }
+  table.fc-table thead th.fc-label{ background:var(--card-alt); z-index:3; }
+  table.fc-table tr.fc-total td{ font-weight:700; color:var(--ink); background:rgba(255,255,255,.03); }
+  table.fc-table tr.fc-total td.fc-label{ background:var(--card); }
+  table.fc-table .fc-f{ color:var(--slate); }
+  table.fc-table .fc-a{ color:var(--ink-soft); font-weight:600; }
+  table.fc-table .fc-a.positive{ color:var(--success); }
+  table.fc-table .fc-a.negative{ color:var(--danger); }
+  table.fc-table .fc-dim{ color:var(--slate-soft); font-weight:400; }
+  .fc-row-hidden{ display:none; }
+  .fc-eye{ appearance:none; border:none; background:none; color:var(--slate-soft); cursor:pointer; font-size:11px; padding:2px 4px; margin-inline-start:4px; }
+  .fc-eye:hover{ color:var(--ink); }
+  tr.fc-section-head-row{ cursor:pointer; }
+  tr.fc-section-head-row td{ position:static; text-align:start; background:var(--card-alt) !important; font-weight:700; color:var(--ink); }
+  tr.fc-section-head-row:hover td{ background:var(--line) !important; }
+  tr.fc-section-head-row .chev{ display:inline-block; margin-inline-end:6px; transition:transform .15s ease; color:var(--slate); font-size:11px; }
+  tr.fc-section-head-row.collapsed .chev{ transform:rotate(-90deg); }
+  table.fc-table tr.fc-empty-row td{ color:var(--slate); font-style:normal; text-align:start; background:var(--card); white-space:normal; }
+  @media (max-width:640px){
+    table.fc-table td.fc-label, table.fc-table th.fc-label{ min-width:132px; }
+  }
 </style>
 </head>
 <body>
@@ -1098,7 +1134,48 @@
       chart_breakdown_title: 'توزيع البنود',
       chart_empty: 'لا توجد بيانات كافية بعد لعرض الرسم البياني',
       chart_tap_hint: 'اضغط على أي عنصر لعرض تفاصيله هنا',
-      chart_total_label: 'الإجمالي'
+      chart_total_label: 'الإجمالي',
+
+      tab_forecast: 'التوقعات السنوية',
+      forecast_title: 'التوقعات السنوية للتدفقات النقدية',
+      forecast_year_label: 'سنة {year}',
+      forecast_col_forecast: 'متوقع',
+      forecast_col_actual: 'فعلي',
+      forecast_dash: '—',
+      forecast_export_btn: '⬇️ تصدير التوقعات',
+      forecast_kpi_forecast_net: 'صافي التدفق المتوقع (السنة كاملة)',
+      forecast_kpi_actual_net: 'صافي التدفق الفعلي (حتى اليوم)',
+      forecast_kpi_yearend: 'الرصيد المتوقع نهاية السنة',
+      forecast_kpi_variance: 'الفرق بين الفعلي والمتوقع (لغاية اليوم)',
+      forecast_kpi_negative_months: 'أشهر برصيد ختامي متوقع سالب',
+      forecast_section_opening: 'الرصيد الافتتاحي',
+      forecast_section_income: 'الإيرادات',
+      forecast_section_expense: 'المصروفات',
+      forecast_section_loans: 'القروض',
+      forecast_section_subscriptions: 'الاشتراكات',
+      forecast_section_cards: 'بطاقات الائتمان',
+      forecast_section_totals: 'الإجمالي والصافي',
+      forecast_row_opening: 'الرصيد الافتتاحي',
+      forecast_row_total_inflows: 'إجمالي الإيرادات',
+      forecast_row_total_inflows_opening: 'إجمالي الإيرادات + الرصيد الافتتاحي',
+      forecast_row_total_outflows: 'إجمالي المصروفات النقدية',
+      forecast_row_net: 'صافي الشهر',
+      forecast_row_closing: 'الرصيد الختامي',
+      forecast_no_categories: 'لا توجد بنود لها بيانات كافية (ميزانية أو عمليات متكررة أو عمليات فعلية) بعد',
+      forecast_no_loans: 'لا توجد قروض نشطة خلال هذه السنة',
+      forecast_no_subs: 'لا توجد اشتراكات نشطة',
+      forecast_no_cards: 'لا توجد عمليات سداد مسجّلة على بطاقات الائتمان بعد',
+      forecast_hide_row: 'إخفاء هذا الصف',
+      forecast_show_row: 'إظهار',
+      forecast_hidden_rows: '{count} صف مخفي',
+      forecast_show_all_rows: 'إظهار الكل',
+      forecast_alerts_title: 'تنبيهات ذكية',
+      forecast_no_alerts: 'لا توجد تنبيهات حاليًا — التوقعات ضمن المعدل الطبيعي',
+      forecast_alert_negative: 'الرصيد المتوقع في نهاية {month} سيصبح سالبًا ({amount})',
+      forecast_alert_variance: 'مصروفات {month} الفعلية تجاوزت المتوقع بنسبة {pct}%',
+      forecast_alert_loan_payoff: 'قرض "{name}" ستنتهي أقساطه في {month}',
+      forecast_methodology_note: 'يعتمد "المتوقع" على العمليات المتكررة المُجدولة، وعند عدم توفرها على الميزانية الشهرية المحددة لكل بند. أما "الفعلي" فهو مجموع العمليات الحقيقية المسجّلة في التطبيق. الاشتراكات لا تملك ربطًا مباشرًا بعمليات فعلية في بيانات التطبيق حاليًا، لذلك تظهر في عمود المتوقع فقط دون رقم فعلي مقابل. بطاقات الائتمان تُحتسب بعكسها: الفعلي فقط من عمليات السداد الحقيقية، دون توقع لعدم وجود مصدر بيانات موثوق له. لا تُستخدم أي أرقام افتراضية أو وهمية في هذه الصفحة.',
+      forecast_unlinked_badge: 'غير مرتبط بعملية فعلية'
   };
 
   function t(key) { return I18N[key] || key; }
@@ -1229,6 +1306,216 @@
   function daysInMonth(monthKey) {
     var parts = monthKey.split('-').map(Number);
     return new Date(parts[0], parts[1], 0).getDate();
+  }
+
+  // ---------------- Annual Forecast ----------------
+  // Methodology (no fabricated numbers — every figure traces back to real
+  // app data):
+  //  - Forecast per category/month = matching recurring-transaction rules
+  //    for that month if any exist, otherwise the category's monthly
+  //    budget target if set, otherwise no forecast (shown as a dash).
+  //  - Actual per category/month = sum of real transactions recorded in
+  //    that month.
+  //  - Loans: forecast = monthlyInstallment while the loan is still within
+  //    its term; actual = real loan payments recorded that month.
+  //  - Subscriptions: forecast = amount while active; there is no linkage
+  //    between subscriptions and real transactions in the data model, so
+  //    no "actual" figure is invented for them — they are flagged unlinked.
+  //  - Credit cards: actual = real card payment transactions that month;
+  //    there is no reliable forecast source for card payments, so the
+  //    forecast column is left blank rather than guessed.
+  //  - Opening/closing balances roll forward month to month, separately
+  //    for the forecast track and the actual track, exactly like the
+  //    existing monthly summary calculation (opening + net).
+  function isLoanActiveInMonth(loan, monthKey) {
+    var start = monthKeyOf(loan.startDate);
+    var end = shiftMonth(start, Math.max(0, loan.termMonths - 1));
+    return monthKey >= start && monthKey <= end;
+  }
+
+  function forecastYearKeys(year) {
+    var keys = [];
+    for (var m = 1; m <= 12; m++) keys.push(year + '-' + pad2(m));
+    return keys;
+  }
+
+  function computeAnnualForecast(year) {
+    var months = forecastYearKeys(year);
+    var todayKey = monthKeyOf(todayStr());
+
+    var catById = {};
+    state.categories.forEach(function (c) { catById[c.id] = c; });
+
+    function recurringForecast(categoryId, type, monthKey) {
+      var monthNum = parseInt(monthKey.split('-')[1], 10);
+      var sum = 0, matched = false;
+      state.recurringTransactions.forEach(function (rule) {
+        if (rule.categoryId !== categoryId || rule.type !== type) return;
+        if (rule.months && rule.months.length && rule.months.indexOf(monthNum) === -1) return;
+        sum += rule.amount;
+        matched = true;
+      });
+      return matched ? sum : null;
+    }
+
+    function categoryForecast(categoryId, type, monthKey) {
+      var rec = recurringForecast(categoryId, type, monthKey);
+      if (rec !== null) return rec;
+      var budget = state.budgets[categoryId];
+      if (budget) return budget;
+      return null;
+    }
+
+    function categoryActual(categoryId, type, monthKey) {
+      var sum = 0, has = false;
+      state.transactions.forEach(function (tx) {
+        if (tx.categoryId !== categoryId || tx.type !== type) return;
+        if (monthKeyOf(tx.date) !== monthKey) return;
+        sum += tx.amount; has = true;
+      });
+      return { amount: sum, has: has };
+    }
+
+    function categoryHasAnyData(cat) {
+      if (state.budgets[cat.id]) return true;
+      if (state.recurringTransactions.some(function (r) { return r.categoryId === cat.id; })) return true;
+      if (state.transactions.some(function (tx) { return tx.categoryId === cat.id; })) return true;
+      return false;
+    }
+
+    var incomeCats = state.categories.filter(function (c) { return c.type === 'income' && categoryHasAnyData(c); });
+    var expenseCats = state.categories.filter(function (c) { return c.type === 'expense' && categoryHasAnyData(c); });
+    var cardsWithData = state.creditCards.filter(function (card) {
+      return state.cardTransactions.some(function (tx) { return tx.cardId === card.id && tx.type === 'payment'; });
+    });
+
+    // baseline balance at the very start of the year, from real data only
+    var yearStart = months[0] + '-01';
+    var baseline = (state.openingBalance != null ? state.openingBalance : 0);
+    state.transactions.forEach(function (tx) {
+      if (tx.date < yearStart) baseline += (tx.type === 'income' ? tx.amount : -tx.amount);
+    });
+
+    var runningForecastOpening = baseline;
+    var runningActualOpening = baseline;
+
+    var monthRows = months.map(function (monthKey) {
+      var isFuture = monthKey > todayKey;
+
+      var incomeRows = incomeCats.map(function (cat) {
+        var f = categoryForecast(cat.id, 'income', monthKey);
+        var a = categoryActual(cat.id, 'income', monthKey);
+        return { key: 'inc-' + cat.id, label: cat.name, forecast: f, actual: a.has ? a.amount : (isFuture ? null : 0), hasActual: a.has };
+      });
+      var expenseRows = expenseCats.map(function (cat) {
+        var f = categoryForecast(cat.id, 'expense', monthKey);
+        var a = categoryActual(cat.id, 'expense', monthKey);
+        return { key: 'exp-' + cat.id, label: cat.name, forecast: f, actual: a.has ? a.amount : (isFuture ? null : 0), hasActual: a.has };
+      });
+      var loanRows = state.loans.filter(function (loan) { return isLoanActiveInMonth(loan, monthKey); }).map(function (loan) {
+        var actual = 0, has = false;
+        state.loanPayments.forEach(function (p) { if (p.loanId === loan.id && monthKeyOf(p.date) === monthKey) { actual += p.amount; has = true; } });
+        return { key: 'loan-' + loan.id, label: loan.name, forecast: loan.monthlyInstallment, actual: has ? actual : (isFuture ? null : 0), hasActual: has };
+      });
+      var subRows = state.subscriptions.filter(function (s) { return s.active; }).map(function (sub) {
+        return { key: 'sub-' + sub.id, label: sub.name, forecast: sub.amount, actual: null, hasActual: false, unlinked: true };
+      });
+      var cardRows = cardsWithData.map(function (card) {
+        var actual = 0, has = false;
+        state.cardTransactions.forEach(function (tx) { if (tx.cardId === card.id && tx.type === 'payment' && monthKeyOf(tx.date) === monthKey) { actual += tx.amount; has = true; } });
+        return { key: 'card-' + card.id, label: card.name, forecast: null, actual: has ? actual : (isFuture ? null : 0), hasActual: has };
+      });
+
+      var totalInflowsForecast = incomeRows.reduce(function (s, r) { return s + (r.forecast || 0); }, 0);
+      var totalInflowsActual = incomeRows.reduce(function (s, r) { return s + (r.actual || 0); }, 0);
+
+      var totalOutflowsForecast =
+        expenseRows.reduce(function (s, r) { return s + (r.forecast || 0); }, 0) +
+        loanRows.reduce(function (s, r) { return s + (r.forecast || 0); }, 0) +
+        subRows.reduce(function (s, r) { return s + (r.forecast || 0); }, 0);
+      var totalOutflowsActual =
+        expenseRows.reduce(function (s, r) { return s + (r.actual || 0); }, 0) +
+        loanRows.reduce(function (s, r) { return s + (r.actual || 0); }, 0) +
+        cardRows.reduce(function (s, r) { return s + (r.actual || 0); }, 0);
+
+      var netForecast = totalInflowsForecast - totalOutflowsForecast;
+      var netActual = totalInflowsActual - totalOutflowsActual;
+
+      var openingForecast = runningForecastOpening;
+      var openingActual = runningActualOpening;
+      var closingForecast = openingForecast + netForecast;
+      var closingActual = openingActual + netActual;
+
+      runningForecastOpening = closingForecast;
+      runningActualOpening = closingActual;
+
+      return {
+        monthKey: monthKey,
+        isFuture: isFuture,
+        incomeRows: incomeRows,
+        expenseRows: expenseRows,
+        loanRows: loanRows,
+        subRows: subRows,
+        cardRows: cardRows,
+        openingForecast: openingForecast,
+        openingActual: openingActual,
+        totalInflowsForecast: totalInflowsForecast,
+        totalInflowsActual: totalInflowsActual,
+        totalInflowsPlusOpeningForecast: openingForecast + totalInflowsForecast,
+        totalInflowsPlusOpeningActual: openingActual + totalInflowsActual,
+        totalOutflowsForecast: totalOutflowsForecast,
+        totalOutflowsActual: totalOutflowsActual,
+        netForecast: netForecast,
+        netActual: netActual,
+        closingForecast: closingForecast,
+        closingActual: closingActual
+      };
+    });
+
+    // KPIs
+    var yearForecastNet = monthRows.reduce(function (s, m) { return s + m.netForecast; }, 0);
+    var elapsedMonths = monthRows.filter(function (m) { return !m.isFuture; });
+    var yearActualNetToDate = elapsedMonths.reduce(function (s, m) { return s + m.netActual; }, 0);
+    var yearEndClosingForecast = monthRows[11].closingForecast;
+    var varianceToDate = elapsedMonths.reduce(function (s, m) { return s + (m.netActual - m.netForecast); }, 0);
+    var negativeMonths = monthRows.filter(function (m) { return m.closingForecast < 0; });
+
+    // Alerts
+    var alerts = [];
+    monthRows.forEach(function (m) {
+      if (m.closingForecast < 0) {
+        alerts.push({ level: 'danger', text: tf('forecast_alert_negative', { month: formatMonthLabel(m.monthKey), amount: formatCurrency(m.closingForecast) }) });
+      }
+    });
+    elapsedMonths.forEach(function (m) {
+      if (m.totalOutflowsForecast > 0 && m.totalOutflowsActual > m.totalOutflowsForecast * 1.15) {
+        var pct = Math.round(((m.totalOutflowsActual - m.totalOutflowsForecast) / m.totalOutflowsForecast) * 100);
+        alerts.push({ level: 'warning', text: tf('forecast_alert_variance', { month: formatMonthLabel(m.monthKey), pct: pct }) });
+      }
+    });
+    state.loans.forEach(function (loan) {
+      var start = monthKeyOf(loan.startDate);
+      var payoffMonth = shiftMonth(start, Math.max(0, loan.termMonths - 1));
+      if (months.indexOf(payoffMonth) !== -1) {
+        alerts.push({ level: 'info', text: tf('forecast_alert_loan_payoff', { name: loan.name, month: formatMonthLabel(payoffMonth) }) });
+      }
+    });
+
+    return {
+      year: year,
+      months: monthRows,
+      incomeCats: incomeCats,
+      expenseCats: expenseCats,
+      cardsWithData: cardsWithData,
+      kpis: {
+        yearForecastNet: yearForecastNet,
+        yearActualNetToDate: yearActualNetToDate,
+        yearEndClosingForecast: yearEndClosingForecast,
+        varianceToDate: varianceToDate,
+        negativeMonthsCount: negativeMonths.length
+      },
+      alerts: alerts
+    };
   }
 
   function computeDailyNet(monthKey) {
@@ -1480,6 +1767,10 @@
   var chartBreakdownType = 'expense';
   var chartActive = {};
 
+  var forecastYear = (new Date()).getFullYear();
+  var forecastCollapsed = {};
+  var forecastHiddenRows = {};
+
   var app = document.getElementById('app');
 
   function render() {
@@ -1679,7 +1970,8 @@
       { key: 'investments', label: t('tab_investments') },
       { key: 'charts', label: t('tab_charts') },
       { key: 'notifications', label: t('tab_notifications') },
-      { key: 'categories', label: t('tab_categories') }
+      { key: 'categories', label: t('tab_categories') },
+      { key: 'forecast', label: t('tab_forecast') }
     ];
     var tabsHtml = tabs.map(function (tb) {
       return '<button class="tab' + (currentTab === tb.key ? ' active' : '') + '" data-action="tab" data-tab="' + tb.key + '">' + tb.label + '</button>';
@@ -1693,6 +1985,13 @@
         '<button data-action="next-month">' + t('month_next') + '</button>' +
         '</div></div>'
       : '';
+    if (currentTab === 'forecast') {
+      monthNavRow = '<div class="month-nav-row"><div class="month-nav">' +
+        '<button data-action="prev-forecast-year">' + t('month_prev') + '</button>' +
+        '<span class="label">' + forecastYear + '</span>' +
+        '<button data-action="next-forecast-year">' + t('month_next') + '</button>' +
+        '</div></div>';
+    }
 
     return (
       '<header class="top"><div class="inner">' +
@@ -1718,6 +2017,7 @@
     if (currentTab === 'charts') return renderCharts();
     if (currentTab === 'notifications') return renderNotifications();
     if (currentTab === 'categories') return renderCategories();
+    if (currentTab === 'forecast') return renderForecast();
     return '';
   }
 
@@ -2138,6 +2438,247 @@
       '<h2 class="section-title">' + t('categories_title') + '</h2><p class="section-desc">&nbsp;</p>' +
       '<div class="cat-layout">' + col('income', t('income_items_title')) + col('expense', t('expense_items_title')) + '</div>'
     );
+  }
+
+  // ---------------- Annual Forecast tab ----------------
+  function fcRowClass(rowKey, sectionCollapsed) {
+    return (sectionCollapsed || forecastHiddenRows[rowKey]) ? ' class="fc-row-hidden"' : '';
+  }
+
+  function fcLineCell(cell) {
+    var fText = (cell.forecast === null || cell.forecast === undefined) ? t('forecast_dash') : formatCurrency(cell.forecast);
+    var noActual = cell.unlinked || cell.actual === null || cell.actual === undefined;
+    var aText = noActual ? t('forecast_dash') : formatCurrency(cell.actual);
+    var aCls = 'fc-a' + (noActual ? ' fc-dim' : '');
+    return '<td class="fc-f">' + fText + '</td><td class="' + aCls + '">' + aText + '</td>';
+  }
+
+  function fcTotalCell(forecastVal, actualVal) {
+    var aCls = 'fc-a' + (actualVal >= 0 ? ' positive' : ' negative');
+    return '<td class="fc-f">' + formatCurrency(forecastVal) + '</td><td class="' + aCls + '">' + formatCurrency(actualVal) + '</td>';
+  }
+
+  function renderForecastLineRow(rowKey, label, months, cellsAccessor, sectionCollapsed) {
+    var cells = months.map(function (m) { return fcLineCell(cellsAccessor(m)); }).join('');
+    return (
+      '<tr data-row-key="' + rowKey + '"' + fcRowClass(rowKey, sectionCollapsed) + '>' +
+      '<td class="fc-label">' + escapeHtml(label) +
+      '<button type="button" class="fc-eye" data-action="fc-toggle-row" data-row-key="' + rowKey + '" title="' + t('forecast_hide_row') + '">👁️</button></td>' +
+      cells + '</tr>'
+    );
+  }
+
+  function renderForecastTotalRow(rowKey, label, months, forecastAccessor, actualAccessor) {
+    var cells = months.map(function (m) { return fcTotalCell(forecastAccessor(m), actualAccessor(m)); }).join('');
+    return '<tr class="fc-total" data-row-key="' + rowKey + '"><td class="fc-label">' + escapeHtml(label) + '</td>' + cells + '</tr>';
+  }
+
+  function renderForecastSectionHeadRow(sectionKey, title, totalColumns) {
+    var collapsed = !!forecastCollapsed[sectionKey];
+    return (
+      '<tr class="fc-section-head-row' + (collapsed ? ' collapsed' : '') + '" data-action="fc-toggle-section" data-section-key="' + sectionKey + '">' +
+      '<td colspan="' + totalColumns + '"><span class="chev">▾</span>' + escapeHtml(title) + '</td></tr>'
+    );
+  }
+
+  function renderForecastKpis(data) {
+    var k = data.kpis;
+    function tile(label, val) {
+      var cls = val >= 0 ? 'positive' : 'negative';
+      return '<div class="card stat-tile"><div class="k">' + label + '</div><div class="v ' + cls + '">' + formatCurrency(val) + '</div></div>';
+    }
+    return (
+      '<div class="grid-4">' +
+      tile(t('forecast_kpi_forecast_net'), k.yearForecastNet) +
+      tile(t('forecast_kpi_actual_net'), k.yearActualNetToDate) +
+      tile(t('forecast_kpi_yearend'), k.yearEndClosingForecast) +
+      tile(t('forecast_kpi_variance'), k.varianceToDate) +
+      '<div class="card stat-tile"><div class="k">' + t('forecast_kpi_negative_months') + '</div><div class="v ' + (k.negativeMonthsCount > 0 ? 'negative' : '') + '">' + k.negativeMonthsCount + '</div></div>' +
+      '</div>'
+    );
+  }
+
+  function renderForecastAlerts(data) {
+    var items;
+    if (data.alerts.length === 0) {
+      items = '<p class="section-desc">' + t('forecast_no_alerts') + '</p>';
+    } else {
+      items = data.alerts.map(function (a) {
+        var icon = a.level === 'danger' ? '🔴' : (a.level === 'warning' ? '🟡' : 'ℹ️');
+        return '<div class="alert-item ' + (a.level === 'info' ? '' : a.level) + '"><span class="icon">' + icon + '</span><div class="body"><div class="msg">' + escapeHtml(a.text) + '</div></div></div>';
+      }).join('');
+    }
+    return '<div class="card" style="margin-bottom:14px;"><h3 style="margin:0 0 12px;font-size:14px;">' + t('forecast_alerts_title') + '</h3>' + items + '</div>';
+  }
+
+  function renderForecastTable(data) {
+    var months = data.months;
+    var totalCols = 1 + months.length * 2;
+
+    var theadRow1 = '<th class="fc-label" rowspan="2">&nbsp;</th>' + months.map(function (m) {
+      return '<th colspan="2">' + formatMonthLabel(m.monthKey) + '</th>';
+    }).join('');
+    var theadRow2 = months.map(function () {
+      return '<th>' + t('forecast_col_forecast') + '</th><th>' + t('forecast_col_actual') + '</th>';
+    }).join('');
+
+    var rows = '';
+
+    rows += renderForecastTotalRow('opening', t('forecast_row_opening'), months, function (m) { return m.openingForecast; }, function (m) { return m.openingActual; });
+
+    rows += renderForecastSectionHeadRow('income', t('forecast_section_income'), totalCols);
+    var incomeCollapsed = !!forecastCollapsed['income'];
+    if (data.incomeCats.length === 0) {
+      rows += '<tr class="fc-empty-row' + (incomeCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_categories') + '</td></tr>';
+    } else {
+      data.incomeCats.forEach(function (cat, idx) {
+        rows += renderForecastLineRow('income-' + cat.id, cat.name, months, function (m) { return m.incomeRows[idx]; }, incomeCollapsed);
+      });
+    }
+    rows += renderForecastTotalRow('total-inflows', t('forecast_row_total_inflows'), months, function (m) { return m.totalInflowsForecast; }, function (m) { return m.totalInflowsActual; });
+    rows += renderForecastTotalRow('total-inflows-opening', t('forecast_row_total_inflows_opening'), months, function (m) { return m.totalInflowsPlusOpeningForecast; }, function (m) { return m.totalInflowsPlusOpeningActual; });
+
+    rows += renderForecastSectionHeadRow('expense', t('forecast_section_expense'), totalCols);
+    var expenseCollapsed = !!forecastCollapsed['expense'];
+    if (data.expenseCats.length === 0) {
+      rows += '<tr class="fc-empty-row' + (expenseCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_categories') + '</td></tr>';
+    } else {
+      data.expenseCats.forEach(function (cat, idx) {
+        rows += renderForecastLineRow('expense-' + cat.id, cat.name, months, function (m) { return m.expenseRows[idx]; }, expenseCollapsed);
+      });
+    }
+
+    rows += renderForecastSectionHeadRow('loans', t('forecast_section_loans'), totalCols);
+    var loansCollapsed = !!forecastCollapsed['loans'];
+    var anyLoanRow = months.some(function (m) { return m.loanRows.length > 0; });
+    if (!anyLoanRow) {
+      rows += '<tr class="fc-empty-row' + (loansCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_loans') + '</td></tr>';
+    } else {
+      state.loans.forEach(function (loan) {
+        var appearsAnyMonth = months.some(function (m) { return isLoanActiveInMonth(loan, m.monthKey); });
+        if (!appearsAnyMonth) return;
+        rows += renderForecastLineRow('loan-' + loan.id, loan.name, months, function (m) {
+          var row = m.loanRows.find(function (r) { return r.key === 'loan-' + loan.id; });
+          return row || { forecast: null, actual: null, hasActual: false };
+        }, loansCollapsed);
+      });
+    }
+
+    rows += renderForecastSectionHeadRow('subscriptions', t('forecast_section_subscriptions'), totalCols);
+    var subsCollapsed = !!forecastCollapsed['subscriptions'];
+    var activeSubs = state.subscriptions.filter(function (s) { return s.active; });
+    if (activeSubs.length === 0) {
+      rows += '<tr class="fc-empty-row' + (subsCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_subs') + '</td></tr>';
+    } else {
+      activeSubs.forEach(function (sub) {
+        rows += renderForecastLineRow('sub-' + sub.id, sub.name, months, function (m) {
+          var row = m.subRows.find(function (r) { return r.key === 'sub-' + sub.id; });
+          return row || { forecast: null, actual: null, unlinked: true };
+        }, subsCollapsed);
+      });
+    }
+
+    rows += renderForecastSectionHeadRow('cards', t('forecast_section_cards'), totalCols);
+    var cardsCollapsed = !!forecastCollapsed['cards'];
+    if (data.cardsWithData.length === 0) {
+      rows += '<tr class="fc-empty-row' + (cardsCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_cards') + '</td></tr>';
+    } else {
+      data.cardsWithData.forEach(function (card) {
+        rows += renderForecastLineRow('card-' + card.id, card.name, months, function (m) {
+          var row = m.cardRows.find(function (r) { return r.key === 'card-' + card.id; });
+          return row || { forecast: null, actual: null, hasActual: false };
+        }, cardsCollapsed);
+      });
+    }
+
+    rows += renderForecastTotalRow('total-outflows', t('forecast_row_total_outflows'), months, function (m) { return m.totalOutflowsForecast; }, function (m) { return m.totalOutflowsActual; });
+    rows += renderForecastTotalRow('net', t('forecast_row_net'), months, function (m) { return m.netForecast; }, function (m) { return m.netActual; });
+    rows += renderForecastTotalRow('closing', t('forecast_row_closing'), months, function (m) { return m.closingForecast; }, function (m) { return m.closingActual; });
+
+    return (
+      '<div class="fc-table-scroll"><table class="fc-table">' +
+      '<thead><tr>' + theadRow1 + '</tr><tr>' + theadRow2 + '</tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>'
+    );
+  }
+
+  function renderForecast() {
+    var data = computeAnnualForecast(forecastYear);
+    var hiddenCount = Object.keys(forecastHiddenRows).filter(function (k) { return forecastHiddenRows[k]; }).length;
+    var hiddenBanner = hiddenCount > 0
+      ? '<div class="fc-hidden-banner">' + tf('forecast_hidden_rows', { count: hiddenCount }) + ' · <button type="button" data-action="fc-show-all-rows">' + t('forecast_show_all_rows') + '</button></div>'
+      : '';
+    return (
+      '<div class="fc-actions"><h2 class="section-title" style="margin:0;">' + t('forecast_title') + '</h2>' +
+      '<button class="export-btn" data-action="export-forecast">' + t('forecast_export_btn') + '</button></div>' +
+      '<p class="fc-note">' + escapeHtml(t('forecast_methodology_note')) + '</p>' +
+      renderForecastKpis(data) +
+      renderForecastAlerts(data) +
+      hiddenBanner +
+      renderForecastTable(data)
+    );
+  }
+
+  function exportForecastCsv(data) {
+    var headerRow1 = [''];
+    var headerRow2 = [''];
+    data.months.forEach(function (m) {
+      headerRow1.push(formatMonthLabel(m.monthKey), '');
+      headerRow2.push(t('forecast_col_forecast'), t('forecast_col_actual'));
+    });
+    var rows = [headerRow1, headerRow2];
+
+    function pushLineRow(label, cellsAccessor) {
+      var row = [label];
+      data.months.forEach(function (m) {
+        var c = cellsAccessor(m);
+        row.push(c.forecast === null || c.forecast === undefined ? '' : c.forecast);
+        var noActual = c.unlinked || c.actual === null || c.actual === undefined;
+        row.push(noActual ? '' : c.actual);
+      });
+      rows.push(row);
+    }
+    function pushTotalRow(label, fAcc, aAcc) {
+      var row = [label];
+      data.months.forEach(function (m) { row.push(fAcc(m), aAcc(m)); });
+      rows.push(row);
+    }
+
+    pushTotalRow(t('forecast_row_opening'), function (m) { return m.openingForecast; }, function (m) { return m.openingActual; });
+    rows.push([t('forecast_section_income')]);
+    data.incomeCats.forEach(function (cat, idx) { pushLineRow(cat.name, function (m) { return m.incomeRows[idx]; }); });
+    pushTotalRow(t('forecast_row_total_inflows'), function (m) { return m.totalInflowsForecast; }, function (m) { return m.totalInflowsActual; });
+    pushTotalRow(t('forecast_row_total_inflows_opening'), function (m) { return m.totalInflowsPlusOpeningForecast; }, function (m) { return m.totalInflowsPlusOpeningActual; });
+    rows.push([t('forecast_section_expense')]);
+    data.expenseCats.forEach(function (cat, idx) { pushLineRow(cat.name, function (m) { return m.expenseRows[idx]; }); });
+    rows.push([t('forecast_section_loans')]);
+    state.loans.forEach(function (loan) {
+      var appearsAnyMonth = data.months.some(function (m) { return isLoanActiveInMonth(loan, m.monthKey); });
+      if (!appearsAnyMonth) return;
+      pushLineRow(loan.name, function (m) {
+        var row = m.loanRows.find(function (r) { return r.key === 'loan-' + loan.id; });
+        return row || { forecast: null, actual: null };
+      });
+    });
+    rows.push([t('forecast_section_subscriptions')]);
+    state.subscriptions.filter(function (s) { return s.active; }).forEach(function (sub) {
+      pushLineRow(sub.name, function (m) {
+        var row = m.subRows.find(function (r) { return r.key === 'sub-' + sub.id; });
+        return row || { forecast: null, actual: null, unlinked: true };
+      });
+    });
+    rows.push([t('forecast_section_cards')]);
+    data.cardsWithData.forEach(function (card) {
+      pushLineRow(card.name, function (m) {
+        var row = m.cardRows.find(function (r) { return r.key === 'card-' + card.id; });
+        return row || { forecast: null, actual: null };
+      });
+    });
+    pushTotalRow(t('forecast_row_total_outflows'), function (m) { return m.totalOutflowsForecast; }, function (m) { return m.totalOutflowsActual; });
+    pushTotalRow(t('forecast_row_net'), function (m) { return m.netForecast; }, function (m) { return m.netActual; });
+    pushTotalRow(t('forecast_row_closing'), function (m) { return m.closingForecast; }, function (m) { return m.closingActual; });
+
+    exportCsv('annual-forecast-' + data.year + '.csv', rows);
   }
 
   // ---------------- Credit cards tab ----------------
@@ -3475,6 +4016,22 @@
     }
     if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); render(); return; }
     if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); render(); return; }
+    if (action === 'prev-forecast-year') { forecastYear -= 1; render(); return; }
+    if (action === 'next-forecast-year') { forecastYear += 1; render(); return; }
+    if (action === 'fc-toggle-section') {
+      var fcSecKey = btn.dataset.sectionKey;
+      forecastCollapsed[fcSecKey] = !forecastCollapsed[fcSecKey];
+      render();
+      return;
+    }
+    if (action === 'fc-toggle-row') {
+      var fcRowKey = btn.dataset.rowKey;
+      forecastHiddenRows[fcRowKey] = !forecastHiddenRows[fcRowKey];
+      render();
+      return;
+    }
+    if (action === 'fc-show-all-rows') { forecastHiddenRows = {}; render(); return; }
+    if (action === 'export-forecast') { exportForecastCsv(computeAnnualForecast(forecastYear)); return; }
 
 
     if (action === 'edit-opening') { editingOpeningBalance = true; render(); return; }
