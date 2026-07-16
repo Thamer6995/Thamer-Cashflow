@@ -1765,9 +1765,12 @@
   var quickAddType = 'expense';
   var quickAddPrefillAmount = '';
   var focusQaCategoryOnce = false;
+  var urlAutoSaveToast = false;
 
   // Support opening straight into a pre-filled Quick Add via a URL, e.g.
   // from an iOS Shortcut: index.html?amount=25&type=expense
+  // Adding &autosave=1 skips the sheet entirely and saves the transaction
+  // immediately (no category) the moment the app confirms it's logged in.
   var pendingUrlQuickAdd = null;
   (function () {
     try {
@@ -1776,7 +1779,8 @@
       if (urlAmount) {
         pendingUrlQuickAdd = {
           amount: normalizeDigits(urlAmount),
-          type: urlParams.get('type') === 'income' ? 'income' : 'expense'
+          type: urlParams.get('type') === 'income' ? 'income' : 'expense',
+          autosave: urlParams.get('autosave') === '1'
         };
       }
     } catch (e) { /* URLSearchParams unsupported or malformed URL; ignore */ }
@@ -1825,13 +1829,21 @@
       }
       maybeCheckBrowserNotifications();
       if (pendingUrlQuickAdd) {
-        quickAddType = pendingUrlQuickAdd.type;
-        quickAddPrefillAmount = pendingUrlQuickAdd.amount;
-        quickAddOpen = true;
-        focusQaCategoryOnce = true;
+        var qad = pendingUrlQuickAdd;
         pendingUrlQuickAdd = null;
         if (window.history && window.history.replaceState) {
           window.history.replaceState(null, '', window.location.pathname);
+        }
+        var qadAmount = parseFloat(qad.amount);
+        if (qad.autosave && !isNaN(qadAmount) && qadAmount > 0) {
+          state.transactions.push({ id: uid(), date: todayStr(), type: qad.type, amount: qadAmount });
+          saveState();
+          urlAutoSaveToast = true;
+        } else {
+          quickAddType = qad.type;
+          quickAddPrefillAmount = qad.amount;
+          quickAddOpen = true;
+          focusQaCategoryOnce = true;
         }
       }
     }
@@ -1840,6 +1852,14 @@
       focusQaCategoryOnce = false;
       var qaCatEl = document.getElementById('qa-category');
       if (qaCatEl) qaCatEl.focus();
+    }
+    if (urlAutoSaveToast) {
+      urlAutoSaveToast = false;
+      var toastEl = document.getElementById('qa-toast');
+      if (toastEl) {
+        toastEl.classList.add('show');
+        setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+      }
     }
   }
 
