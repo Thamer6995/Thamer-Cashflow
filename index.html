@@ -1763,6 +1763,24 @@
 
   var quickAddOpen = false;
   var quickAddType = 'expense';
+  var quickAddPrefillAmount = '';
+  var focusQaCategoryOnce = false;
+
+  // Support opening straight into a pre-filled Quick Add via a URL, e.g.
+  // from an iOS Shortcut: index.html?amount=25&type=expense
+  var pendingUrlQuickAdd = null;
+  (function () {
+    try {
+      var urlParams = new URLSearchParams(window.location.search);
+      var urlAmount = urlParams.get('amount');
+      if (urlAmount) {
+        pendingUrlQuickAdd = {
+          amount: normalizeDigits(urlAmount),
+          type: urlParams.get('type') === 'income' ? 'income' : 'expense'
+        };
+      }
+    } catch (e) { /* URLSearchParams unsupported or malformed URL; ignore */ }
+  })();
 
   var chartBreakdownType = 'expense';
   var chartActive = {};
@@ -1806,8 +1824,23 @@
         lastRecurringCheckDate = todayStr();
       }
       maybeCheckBrowserNotifications();
+      if (pendingUrlQuickAdd) {
+        quickAddType = pendingUrlQuickAdd.type;
+        quickAddPrefillAmount = pendingUrlQuickAdd.amount;
+        quickAddOpen = true;
+        focusQaCategoryOnce = true;
+        pendingUrlQuickAdd = null;
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
     }
     app.innerHTML = renderHeader() + '<main class="content">' + renderTabContent() + '</main>' + renderQuickAdd();
+    if (focusQaCategoryOnce) {
+      focusQaCategoryOnce = false;
+      var qaCatEl = document.getElementById('qa-category');
+      if (qaCatEl) qaCatEl.focus();
+    }
   }
 
   function mapAuthError(err) {
@@ -1892,6 +1925,8 @@
   }
 
   function renderQuickAdd() {
+    var prefillAmount = quickAddPrefillAmount;
+    quickAddPrefillAmount = '';
     var cats = state.categories.filter(function (c) { return c.type === quickAddType; });
     var catOptions = '<option value="">' + t('quick_add_category_placeholder') + '</option>' + cats.map(function (c) {
       return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
@@ -1920,7 +1955,7 @@
       '<button type="button" class="type-btn' + (quickAddType === 'expense' ? ' active-expense' : '') + '" data-action="qa-set-type" data-type="expense">' + t('type_expense') + '</button>' +
       '</div>' +
       '<div class="qa-amount-row">' +
-      '<div class="qa-amount-field"><input type="text" inputmode="decimal" step="0.01" inputmode="decimal" id="qa-amount" placeholder="0.00"></div>' +
+      '<div class="qa-amount-field"><input type="text" inputmode="decimal" step="0.01" id="qa-amount" placeholder="0.00" value="' + escapeAttr(prefillAmount) + '"></div>' +
       '<button type="submit" class="qa-inline-save ' + saveCls + '" title="' + t('btn_add_tx') + '" aria-label="' + t('btn_add_tx') + '">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"></polyline></svg>' +
       '</button>' +
