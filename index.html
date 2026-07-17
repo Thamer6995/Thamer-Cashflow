@@ -1152,6 +1152,13 @@
       loan_settlement_paste_placeholder: '18500\n17800\n17100\n...',
       loan_settlement_paste_btn: 'تعبئة الجدول من اللصق',
 
+      loans_summary_total_principal: 'إجمالي مبالغ القروض',
+      loans_summary_total_paid: 'إجمالي المسدد',
+      loans_summary_total_remaining: 'إجمالي المتبقي',
+      loans_summary_total_installments: 'إجمالي الأقساط الشهرية',
+      loans_donut_title: 'توزيع الديون المتبقية بين القروض',
+      loans_donut_empty: 'أضِف قرضًا فيه مبلغ متبقٍ ليظهر التوزيع',
+
       subs_title: 'الاشتراكات الشهرية',
       subs_desc: 'تابع اشتراكاتك الشهرية المتكررة وإجمالي تكلفتها الشهرية.',
       sub_name_label: 'اسم الاشتراك',
@@ -1387,6 +1394,19 @@
     var paid = 0;
     state.loanPayments.forEach(function (p) { if (p.loanId === loanId) paid += p.amount; });
     return paid;
+  }
+
+  function computeLoansSummary() {
+    var totalPrincipal = 0, totalPaid = 0, totalRemaining = 0, totalInstallments = 0;
+    state.loans.forEach(function (l) {
+      var paid = computeLoanPaid(l.id);
+      var remaining = Math.max(0, l.principal - paid);
+      totalPrincipal += l.principal;
+      totalPaid += paid;
+      totalRemaining += remaining;
+      totalInstallments += l.monthlyInstallment;
+    });
+    return { totalPrincipal: totalPrincipal, totalPaid: totalPaid, totalRemaining: totalRemaining, totalInstallments: totalInstallments };
   }
 
   // Every month from now (or the loan's start, whichever is later) through
@@ -2938,6 +2958,77 @@
     return renderLoansList();
   }
 
+  function renderLoansSummaryCard() {
+    if (state.loans.length === 0) return '';
+    var s = computeLoansSummary();
+    return (
+      '<div class="grid-4">' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_principal') + '</div><div class="v">' + formatCurrency(s.totalPrincipal) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_paid') + '</div><div class="v positive">' + formatCurrency(s.totalPaid) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_remaining') + '</div><div class="v negative">' + formatCurrency(s.totalRemaining) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_installments') + '</div><div class="v">' + formatCurrency(s.totalInstallments) + '</div></div>' +
+      '</div>'
+    );
+  }
+
+  function renderLoansDonutChart() {
+    if (state.loans.length === 0) return '';
+    var items = state.loans.map(function (l, idx) {
+      var paid = computeLoanPaid(l.id);
+      var remaining = Math.max(0, l.principal - paid);
+      return { id: l.id, name: l.name, remaining: remaining, color: SERIES_COLORS[idx % SERIES_COLORS.length] };
+    }).filter(function (it) { return it.remaining > 0; });
+    var total = items.reduce(function (sum, it) { return sum + it.remaining; }, 0);
+
+    if (items.length === 0 || total <= 0) {
+      return (
+        '<div class="card chart-card">' +
+        '<h3>' + t('loans_donut_title') + '</h3>' +
+        '<p class="empty">' + t('loans_donut_empty') + '</p>' +
+        '</div>'
+      );
+    }
+
+    var cx = 110, cy = 110, rOuter = 100, rInner = 62;
+    var cumulative = 0;
+    var segs = '', legendHtml = '';
+    var anyActive = !!chartActive.loansDonut;
+    items.forEach(function (it) {
+      var frac = it.remaining / total;
+      var startAngle = cumulative * 360;
+      cumulative += frac;
+      var endAngle = cumulative * 360;
+      var isActive = chartActive.loansDonut === it.id;
+      var cls = isActive ? 'active' : (anyActive ? 'dim' : '');
+      var pct = Math.round(frac * 100);
+      segs += '<path class="mark ' + cls + '" data-action="chart-mark" data-chart="loansDonut" data-key="' + it.id + '" d="' + donutSegmentPath(cx, cy, rOuter, rInner, startAngle, endAngle) + '" fill="' + it.color + '"><title>' + escapeHtml(it.name + ': ' + formatCurrency(it.remaining) + ' (' + pct + '%)') + '</title></path>';
+      legendHtml += '<span class="item' + (anyActive && !isActive ? ' dim' : '') + '" data-action="chart-mark" data-chart="loansDonut" data-key="' + it.id + '"><span class="swatch" style="background:' + it.color + '"></span>' + escapeHtml(it.name) + ' · ' + pct + '%</span>';
+    });
+
+    var centerLbl = t('loans_summary_total_remaining');
+    var centerVal = formatCurrency(total);
+    var detailHtml = t('chart_tap_hint');
+    if (chartActive.loansDonut) {
+      var activeItem = items.filter(function (it) { return it.id === chartActive.loansDonut; })[0];
+      if (activeItem) {
+        centerLbl = activeItem.name;
+        centerVal = formatCurrency(activeItem.remaining);
+        detailHtml = escapeHtml(activeItem.name) + ': <span class="val">' + formatCurrency(activeItem.remaining) + '</span>';
+      }
+    }
+
+    return (
+      '<div class="card chart-card">' +
+      '<h3>' + t('loans_donut_title') + '</h3>' +
+      '<div class="donut-wrap"><svg class="chart-svg" viewBox="0 0 220 220">' + segs + '</svg>' +
+      '<div class="donut-center"><div class="lbl">' + escapeHtml(centerLbl) + '</div><div class="val">' + centerVal + '</div></div>' +
+      '</div>' +
+      '<div class="chart-legend">' + legendHtml + '</div>' +
+      '<div class="chart-detail">' + detailHtml + '</div>' +
+      '</div>'
+    );
+  }
+
   function renderLoansList() {
     var addForm = (
       '<form id="loan-form" class="card" style="margin-bottom:16px;">' +
@@ -2995,6 +3086,7 @@
     return (
       '<h2 class="section-title">' + t('loans_title') + '</h2>' +
       '<p class="section-desc">' + t('loans_desc') + '</p>' +
+      renderLoansSummaryCard() + renderLoansDonutChart() +
       addForm + tiles
     );
   }
