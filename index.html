@@ -778,6 +778,28 @@
     return migrated;
   }
 
+  // One-time cleanup: the flat-to-per-month budget migration above carried
+  // old values across a generous 25-month window (a year back, a year
+  // ahead) so nothing already on screen would go blank. In practice that
+  // left a lot of budget months nobody actually set (e.g. mid-2025) once
+  // the user confirmed their active range this year is only August through
+  // December. This runs once per browser and prunes anything outside that
+  // range, then saves so it syncs everywhere too.
+  var BUDGET_PRUNE_KEY = 'thamer-cashflow-budget-pruned-v1';
+  function pruneStaleBudgetMonths() {
+    if (localStorage.getItem(BUDGET_PRUNE_KEY)) return;
+    localStorage.setItem(BUDGET_PRUNE_KEY, '1');
+    var keepStart = '2026-08', keepEnd = '2026-12';
+    var changed = false;
+    Object.keys(state.budgets).forEach(function (categoryId) {
+      var monthMap = state.budgets[categoryId];
+      Object.keys(monthMap).forEach(function (mk) {
+        if (mk < keepStart || mk > keepEnd) { delete monthMap[mk]; changed = true; }
+      });
+    });
+    if (changed) saveState();
+  }
+
   function normalizeState(parsed) {
     var d = defaultState();
     return {
@@ -1785,6 +1807,7 @@
         lastRecurringCheckDate = todayStr();
       }
       maybeCheckBrowserNotifications();
+      pruneStaleBudgetMonths();
       if (pendingUrlQuickAdd) {
         var qad = pendingUrlQuickAdd;
         pendingUrlQuickAdd = null;
