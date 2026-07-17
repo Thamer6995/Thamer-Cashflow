@@ -445,6 +445,16 @@
     flex:1; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
     border:1px solid var(--line); background:var(--card-alt); color:var(--ink); min-width:0;
   }
+  .settlement-paste-box{
+    background:var(--card-alt); border:1px solid var(--line); border-radius:11px;
+    padding:12px 14px; margin-bottom:14px;
+  }
+  .settlement-paste-box label{ font-size:12.5px; font-weight:700; color:var(--ink); }
+  .settlement-paste-box textarea{
+    width:100%; font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; font-size:12.5px;
+    padding:8px 9px; border-radius:7px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); resize:vertical; direction:ltr; text-align:left;
+  }
 
   /* ---------- Calendar ---------- */
   .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:6px; }
@@ -1137,6 +1147,10 @@
       loan_settlement_schedule_hint: 'أدخل قيمة التسوية المبكرة لكل شهر متبقٍ من القرض دفعة وحدة إذا كانت متوفرة لديك من البنك مسبقًا، واترك أي شهر فارغ إذا ما تعرف قيمته بعد.',
       loan_settlement_schedule_save_btn: 'حفظ الجدول',
       loan_settlement_schedule_empty: 'لا توجد أشهر متبقية على هذا القرض',
+      loan_settlement_paste_label: 'لصق من إكسل',
+      loan_settlement_paste_hint: 'انسخ عمود المبالغ من إكسل (رقم واحد بكل سطر، بنفس ترتيب الأشهر من الأعلى للأسفل) والصقه هنا، ثم اضغط "تعبئة" — تقدر تراجع الأرقام قبل الحفظ.',
+      loan_settlement_paste_placeholder: '18500\n17800\n17100\n...',
+      loan_settlement_paste_btn: 'تعبئة الجدول من اللصق',
 
       subs_title: 'الاشتراكات الشهرية',
       subs_desc: 'تابع اشتراكاتك الشهرية المتكررة وإجمالي تكلفتها الشهرية.',
@@ -3019,6 +3033,12 @@
       '<form id="loan-settlement-schedule-form" class="card" data-id="' + loan.id + '" style="margin-bottom:16px;">' +
       '<h3 style="margin:0 0 4px;font-size:15px;font-weight:700;">' + t('loan_settlement_schedule_title') + '</h3>' +
       '<p class="section-desc" style="margin:0 0 12px;">' + t('loan_settlement_schedule_hint') + '</p>' +
+      '<div class="settlement-paste-box">' +
+      '<label>' + t('loan_settlement_paste_label') + '</label>' +
+      '<p class="section-desc" style="margin:2px 0 8px;font-size:11.5px;">' + t('loan_settlement_paste_hint') + '</p>' +
+      '<textarea id="loan-settlement-paste" rows="4" placeholder="' + t('loan_settlement_paste_placeholder') + '"></textarea>' +
+      '<button type="button" class="btn-ghost" data-action="apply-settlement-paste" style="margin-top:8px;">' + t('loan_settlement_paste_btn') + '</button>' +
+      '</div>' +
       '<div class="settlement-sched-list">' + rows + '</div>' +
       '<div id="loan-settlement-schedule-err" class="err"></div>' +
       '<div class="btn-row" style="margin-top:12px;"><button type="submit" class="btn-primary" style="flex:1;">' + t('loan_settlement_schedule_save_btn') + '</button>' +
@@ -4385,6 +4405,18 @@
       return;
     }
     if (action === 'cancel-edit-loan-settlement') { editingLoanSettlementId = null; render(); return; }
+    if (action === 'apply-settlement-paste') {
+      var pasteEl = document.getElementById('loan-settlement-paste');
+      if (!pasteEl) return;
+      var lines = pasteEl.value.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+      var monthInputs = document.querySelectorAll('.settlement-month-input');
+      for (var pi = 0; pi < monthInputs.length && pi < lines.length; pi++) {
+        var cols = normalizeDigits(lines[pi]).split(/\t/);
+        var rawVal = cols[cols.length - 1].replace(/[^\d.\-]/g, '');
+        monthInputs[pi].value = rawVal;
+      }
+      return;
+    }
     if (action === 'edit-loan') { editingLoanId = btn.dataset.id; render(); return; }
     if (action === 'cancel-loan-edit') { editingLoanId = null; render(); return; }
     if (action === 'save-loan-edit') {
