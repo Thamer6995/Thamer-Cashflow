@@ -2961,11 +2961,13 @@
   function renderLoansSummaryCard() {
     if (state.loans.length === 0) return '';
     var s = computeLoansSummary();
+    var paidPct = s.totalPrincipal > 0 ? Math.round((s.totalPaid / s.totalPrincipal) * 100) : 0;
+    var remainingPct = s.totalPrincipal > 0 ? Math.round((s.totalRemaining / s.totalPrincipal) * 100) : 0;
     return (
       '<div class="grid-4">' +
       '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_principal') + '</div><div class="v">' + formatCurrency(s.totalPrincipal) + '</div></div>' +
-      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_paid') + '</div><div class="v positive">' + formatCurrency(s.totalPaid) + '</div></div>' +
-      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_remaining') + '</div><div class="v negative">' + formatCurrency(s.totalRemaining) + '</div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_paid') + '</div><div class="v positive">' + formatCurrency(s.totalPaid) + ' <span style="font-size:12px;font-weight:600;">(' + paidPct + '%)</span></div></div>' +
+      '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_remaining') + '</div><div class="v negative">' + formatCurrency(s.totalRemaining) + ' <span style="font-size:12px;font-weight:600;">(' + remainingPct + '%)</span></div></div>' +
       '<div class="card stat-tile"><div class="k">' + t('loans_summary_total_installments') + '</div><div class="v">' + formatCurrency(s.totalInstallments) + '</div></div>' +
       '</div>'
     );
