@@ -1121,6 +1121,14 @@
       err_loan_term: 'أدخل مدة صحيحة بالأشهر',
       btn_log_payment: 'تسجيل الدفعة',
 
+      loan_settlement_label: 'مبلغ التسوية المبكرة',
+      loan_settlement_hint: 'المبلغ اللي يطلبه البنك لو قررت تقفل القرض بالكامل قبل موعده — يقل عادة كل شهر. حدّثه يدويًا كل ما يعطيك البنك رقم جديد.',
+      loan_settlement_not_set: 'لم يُحدَّد بعد',
+      loan_settlement_add_link: 'إضافة المبلغ',
+      loan_settlement_edit_link: 'تحديث المبلغ',
+      loan_settlement_updated_at: 'آخر تحديث',
+      loan_settlement_save_btn: 'حفظ',
+
       subs_title: 'الاشتراكات الشهرية',
       subs_desc: 'تابع اشتراكاتك الشهرية المتكررة وإجمالي تكلفتها الشهرية.',
       sub_name_label: 'اسم الاشتراك',
@@ -1728,6 +1736,7 @@
   var selectedLoanId = null;
   var editingLoanId = null;
   var editingLoanPaymentId = null;
+  var editingLoanSettlementId = null;
 
   var editingBankBalance = false;
   var bankEditRows = null;
@@ -2939,6 +2948,37 @@
     );
   }
 
+  function renderLoanSettlementTile(loan) {
+    if (editingLoanSettlementId === loan.id) {
+      return (
+        '<form id="loan-settlement-form" class="card stat-tile" data-id="' + loan.id + '">' +
+        '<div class="k">' + t('loan_settlement_label') + '</div>' +
+        '<input type="text" inputmode="decimal" step="0.01" id="loan-settlement-amount" placeholder="0.00" style="width:100%;font-family:inherit;font-size:13px;padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:var(--card-alt);color:var(--ink);margin:6px 0;" value="' + (loan.earlySettlementAmount != null ? loan.earlySettlementAmount : '') + '">' +
+        '<div id="loan-settlement-err" class="err"></div>' +
+        '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('loan_settlement_save_btn') + '</button>' +
+        '<button type="button" class="btn-ghost" data-action="cancel-edit-loan-settlement">' + t('cancel') + '</button></div>' +
+        '</form>'
+      );
+    }
+    if (loan.earlySettlementAmount != null) {
+      return (
+        '<div class="card stat-tile" title="' + escapeAttr(t('loan_settlement_hint')) + '">' +
+        '<div class="k">' + t('loan_settlement_label') + '</div>' +
+        '<div class="v">' + formatCurrency(loan.earlySettlementAmount) + '</div>' +
+        '<div style="font-size:10.5px;color:var(--slate);margin:3px 0 6px;">' + t('loan_settlement_updated_at') + ': ' + formatDateArabic(loan.earlySettlementUpdatedAt) + '</div>' +
+        '<button type="button" class="edit-link" data-action="edit-loan-settlement" data-id="' + loan.id + '">✏️ ' + t('loan_settlement_edit_link') + '</button>' +
+        '</div>'
+      );
+    }
+    return (
+      '<div class="card stat-tile" title="' + escapeAttr(t('loan_settlement_hint')) + '">' +
+      '<div class="k">' + t('loan_settlement_label') + '</div>' +
+      '<div class="v" style="color:var(--slate-soft);font-size:14px;">' + t('loan_settlement_not_set') + '</div>' +
+      '<button type="button" class="edit-link" data-action="edit-loan-settlement" data-id="' + loan.id + '">➕ ' + t('loan_settlement_add_link') + '</button>' +
+      '</div>'
+    );
+  }
+
   function renderLoanDetail(loan) {
     var paid = computeLoanPaid(loan.id);
     var remaining = Math.max(0, loan.principal - paid);
@@ -2955,6 +2995,7 @@
       '<div class="progress-track" style="margin-top:10px;margin-bottom:0;"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>' +
       '<div class="card stat-tile"><div class="k">' + t('loan_remaining') + '</div><div class="v negative">' + formatCurrency(remaining) + '</div></div>' +
       '<div class="card stat-tile"><div class="k">' + t('loan_est_remaining_months') + '</div><div class="v">' + estMonths + '</div></div>' +
+      renderLoanSettlementTile(loan) +
       '</div>'
     );
 
@@ -3794,6 +3835,23 @@
       return;
     }
 
+    if (form.id === 'loan-settlement-form') {
+      e.preventDefault();
+      var settleLoanId = form.dataset.id;
+      var settleAmount = fieldFloat('loan-settlement-amount');
+      var settleErrEl = document.getElementById('loan-settlement-err');
+      if (isNaN(settleAmount) || settleAmount < 0) { settleErrEl.textContent = t('err_amount'); return; }
+      var settleLoan = state.loans.find(function (l) { return l.id === settleLoanId; });
+      if (settleLoan) {
+        settleLoan.earlySettlementAmount = settleAmount;
+        settleLoan.earlySettlementUpdatedAt = todayStr();
+      }
+      editingLoanSettlementId = null;
+      saveState();
+      render();
+      return;
+    }
+
     if (form.id === 'recurring-add-form') {
       e.preventDefault();
       var rType = document.getElementById('recurring-type').value;
@@ -4046,6 +4104,7 @@
       selectedLoanId = null;
       editingLoanId = null;
       editingLoanPaymentId = null;
+      editingLoanSettlementId = null;
       editingBankBalance = false;
       editingSubId = null;
       editingInvestmentId = null;
@@ -4260,8 +4319,10 @@
     }
 
     // ----- Loans -----
-    if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; render(); return; }
-    if (action === 'back-to-loans') { selectedLoanId = null; render(); return; }
+    if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; editingLoanSettlementId = null; render(); return; }
+    if (action === 'back-to-loans') { selectedLoanId = null; editingLoanSettlementId = null; render(); return; }
+    if (action === 'edit-loan-settlement') { editingLoanSettlementId = btn.dataset.id; render(); return; }
+    if (action === 'cancel-edit-loan-settlement') { editingLoanSettlementId = null; render(); return; }
     if (action === 'edit-loan') { editingLoanId = btn.dataset.id; render(); return; }
     if (action === 'cancel-loan-edit') { editingLoanId = null; render(); return; }
     if (action === 'save-loan-edit') {
