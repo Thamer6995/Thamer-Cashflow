@@ -438,6 +438,14 @@
     .budget-row .vs{ flex:1 1 100%; }
   }
 
+  .settlement-sched-list{ display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; }
+  .settlement-sched-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .settlement-sched-row .m{ font-size:13px; color:var(--ink-soft); flex:0 0 110px; }
+  .settlement-sched-row input{
+    flex:1; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink); min-width:0;
+  }
+
   /* ---------- Calendar ---------- */
   .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:6px; }
   .cal-weekday{ text-align:center; font-size:11px; font-weight:700; color:var(--slate-soft); padding-bottom:4px; }
@@ -1121,13 +1129,14 @@
       err_loan_term: 'أدخل مدة صحيحة بالأشهر',
       btn_log_payment: 'تسجيل الدفعة',
 
-      loan_settlement_label: 'مبلغ التسوية المبكرة',
-      loan_settlement_hint: 'المبلغ اللي يطلبه البنك لو قررت تقفل القرض بالكامل قبل موعده — يقل عادة كل شهر. حدّثه يدويًا كل ما يعطيك البنك رقم جديد.',
+      loan_settlement_label: 'مبلغ التسوية المبكرة (الشهر الحالي)',
+      loan_settlement_hint: 'المبلغ اللي يطلبه البنك لو قررت تقفل القرض بالكامل قبل موعده — يقل عادة كل شهر.',
       loan_settlement_not_set: 'لم يُحدَّد بعد',
-      loan_settlement_add_link: 'إضافة المبلغ',
-      loan_settlement_edit_link: 'تحديث المبلغ',
-      loan_settlement_updated_at: 'آخر تحديث',
-      loan_settlement_save_btn: 'حفظ',
+      loan_settlement_schedule_btn: 'إدخال / تعديل الجدول الشهري',
+      loan_settlement_schedule_title: 'جدول التسوية المبكرة الشهري',
+      loan_settlement_schedule_hint: 'أدخل قيمة التسوية المبكرة لكل شهر متبقٍ من القرض دفعة وحدة إذا كانت متوفرة لديك من البنك مسبقًا، واترك أي شهر فارغ إذا ما تعرف قيمته بعد.',
+      loan_settlement_schedule_save_btn: 'حفظ الجدول',
+      loan_settlement_schedule_empty: 'لا توجد أشهر متبقية على هذا القرض',
 
       subs_title: 'الاشتراكات الشهرية',
       subs_desc: 'تابع اشتراكاتك الشهرية المتكررة وإجمالي تكلفتها الشهرية.',
@@ -1364,6 +1373,34 @@
     var paid = 0;
     state.loanPayments.forEach(function (p) { if (p.loanId === loanId) paid += p.amount; });
     return paid;
+  }
+
+  // Every month from now (or the loan's start, whichever is later) through
+  // its final month, for the early-settlement schedule editor.
+  function loanScheduleMonths(loan) {
+    var start = monthKeyOf(loan.startDate);
+    var end = shiftMonth(start, Math.max(0, loan.termMonths - 1));
+    var today = currentMonthKey();
+    var from = today > start ? today : start;
+    var months = [];
+    var cursor = from;
+    var guard = 0;
+    while (cursor <= end && guard < 240) { months.push(cursor); cursor = shiftMonth(cursor, 1); guard++; }
+    return months;
+  }
+
+  // earlySettlementSchedule is the current per-month format. Older loans may
+  // only have the single earlySettlementAmount/earlySettlementUpdatedAt pair
+  // from before the schedule existed; fold that into a one-entry schedule.
+  function getLoanSettlementSchedule(loan) {
+    if (loan.earlySettlementSchedule) return loan.earlySettlementSchedule;
+    if (loan.earlySettlementAmount != null) {
+      var mk = loan.earlySettlementUpdatedAt ? monthKeyOf(loan.earlySettlementUpdatedAt) : currentMonthKey();
+      var obj = {};
+      obj[mk] = loan.earlySettlementAmount;
+      return obj;
+    }
+    return {};
   }
 
   function daysInMonth(monthKey) {
@@ -2949,33 +2986,44 @@
   }
 
   function renderLoanSettlementTile(loan) {
-    if (editingLoanSettlementId === loan.id) {
-      return (
-        '<form id="loan-settlement-form" class="card stat-tile" data-id="' + loan.id + '">' +
-        '<div class="k">' + t('loan_settlement_label') + '</div>' +
-        '<input type="text" inputmode="decimal" step="0.01" id="loan-settlement-amount" placeholder="0.00" style="width:100%;font-family:inherit;font-size:13px;padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:var(--card-alt);color:var(--ink);margin:6px 0;" value="' + (loan.earlySettlementAmount != null ? loan.earlySettlementAmount : '') + '">' +
-        '<div id="loan-settlement-err" class="err"></div>' +
-        '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('loan_settlement_save_btn') + '</button>' +
-        '<button type="button" class="btn-ghost" data-action="cancel-edit-loan-settlement">' + t('cancel') + '</button></div>' +
-        '</form>'
-      );
-    }
-    if (loan.earlySettlementAmount != null) {
-      return (
-        '<div class="card stat-tile" title="' + escapeAttr(t('loan_settlement_hint')) + '">' +
-        '<div class="k">' + t('loan_settlement_label') + '</div>' +
-        '<div class="v">' + formatCurrency(loan.earlySettlementAmount) + '</div>' +
-        '<div style="font-size:10.5px;color:var(--slate);margin:3px 0 6px;">' + t('loan_settlement_updated_at') + ': ' + formatDateArabic(loan.earlySettlementUpdatedAt) + '</div>' +
-        '<button type="button" class="edit-link" data-action="edit-loan-settlement" data-id="' + loan.id + '">✏️ ' + t('loan_settlement_edit_link') + '</button>' +
-        '</div>'
-      );
-    }
+    var schedule = getLoanSettlementSchedule(loan);
+    var curVal = schedule[currentMonthKey()];
+    var isOpen = editingLoanSettlementId === loan.id;
+    var valueHtml = curVal != null
+      ? '<div class="v">' + formatCurrency(curVal) + '</div>'
+      : '<div class="v" style="color:var(--slate-soft);font-size:14px;">' + t('loan_settlement_not_set') + '</div>';
     return (
       '<div class="card stat-tile" title="' + escapeAttr(t('loan_settlement_hint')) + '">' +
       '<div class="k">' + t('loan_settlement_label') + '</div>' +
-      '<div class="v" style="color:var(--slate-soft);font-size:14px;">' + t('loan_settlement_not_set') + '</div>' +
-      '<button type="button" class="edit-link" data-action="edit-loan-settlement" data-id="' + loan.id + '">➕ ' + t('loan_settlement_add_link') + '</button>' +
+      valueHtml +
+      '<button type="button" class="edit-link' + (isOpen ? ' active' : '') + '" data-action="toggle-loan-settlement" data-id="' + loan.id + '">📅 ' + t('loan_settlement_schedule_btn') + '</button>' +
       '</div>'
+    );
+  }
+
+  function renderLoanSettlementSchedulePanel(loan) {
+    var months = loanScheduleMonths(loan);
+    if (months.length === 0) {
+      return '<div class="card" style="margin-bottom:16px;"><p class="section-desc" style="margin:0;">' + t('loan_settlement_schedule_empty') + '</p></div>';
+    }
+    var schedule = getLoanSettlementSchedule(loan);
+    var rows = months.map(function (mk) {
+      return (
+        '<div class="settlement-sched-row">' +
+        '<span class="m">' + formatMonthLabel(mk) + '</span>' +
+        '<input type="text" inputmode="decimal" step="0.01" class="settlement-month-input" data-month="' + mk + '" placeholder="0.00" value="' + (schedule[mk] != null ? schedule[mk] : '') + '">' +
+        '</div>'
+      );
+    }).join('');
+    return (
+      '<form id="loan-settlement-schedule-form" class="card" data-id="' + loan.id + '" style="margin-bottom:16px;">' +
+      '<h3 style="margin:0 0 4px;font-size:15px;font-weight:700;">' + t('loan_settlement_schedule_title') + '</h3>' +
+      '<p class="section-desc" style="margin:0 0 12px;">' + t('loan_settlement_schedule_hint') + '</p>' +
+      '<div class="settlement-sched-list">' + rows + '</div>' +
+      '<div id="loan-settlement-schedule-err" class="err"></div>' +
+      '<div class="btn-row" style="margin-top:12px;"><button type="submit" class="btn-primary" style="flex:1;">' + t('loan_settlement_schedule_save_btn') + '</button>' +
+      '<button type="button" class="btn-ghost" data-action="cancel-edit-loan-settlement">' + t('cancel') + '</button></div>' +
+      '</form>'
     );
   }
 
@@ -2999,7 +3047,9 @@
       '</div>'
     );
 
-    return header + '<div class="tx-layout">' + renderLoanPaymentForm(loan) + renderLoanPaymentList(loan) + '</div>';
+    var schedulePanel = editingLoanSettlementId === loan.id ? renderLoanSettlementSchedulePanel(loan) : '';
+
+    return header + schedulePanel + '<div class="tx-layout">' + renderLoanPaymentForm(loan) + renderLoanPaymentList(loan) + '</div>';
   }
 
   function renderLoanPaymentForm(loan) {
@@ -3835,16 +3885,24 @@
       return;
     }
 
-    if (form.id === 'loan-settlement-form') {
+    if (form.id === 'loan-settlement-schedule-form') {
       e.preventDefault();
-      var settleLoanId = form.dataset.id;
-      var settleAmount = fieldFloat('loan-settlement-amount');
-      var settleErrEl = document.getElementById('loan-settlement-err');
-      if (isNaN(settleAmount) || settleAmount < 0) { settleErrEl.textContent = t('err_amount'); return; }
-      var settleLoan = state.loans.find(function (l) { return l.id === settleLoanId; });
-      if (settleLoan) {
-        settleLoan.earlySettlementAmount = settleAmount;
-        settleLoan.earlySettlementUpdatedAt = todayStr();
+      var schedLoanId = form.dataset.id;
+      var schedLoan = state.loans.find(function (l) { return l.id === schedLoanId; });
+      var schedErrEl = document.getElementById('loan-settlement-schedule-err');
+      if (schedLoan) {
+        var inputs = form.querySelectorAll('.settlement-month-input');
+        var newSchedule = {};
+        var schedHasError = false;
+        inputs.forEach(function (inp) {
+          var raw = inp.value.trim();
+          if (raw === '') return;
+          var val = parseFloat(normalizeDigits(raw));
+          if (isNaN(val) || val < 0) { schedHasError = true; return; }
+          newSchedule[inp.dataset.month] = val;
+        });
+        if (schedHasError) { schedErrEl.textContent = t('err_amount'); return; }
+        schedLoan.earlySettlementSchedule = newSchedule;
       }
       editingLoanSettlementId = null;
       saveState();
@@ -4321,7 +4379,11 @@
     // ----- Loans -----
     if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; editingLoanSettlementId = null; render(); return; }
     if (action === 'back-to-loans') { selectedLoanId = null; editingLoanSettlementId = null; render(); return; }
-    if (action === 'edit-loan-settlement') { editingLoanSettlementId = btn.dataset.id; render(); return; }
+    if (action === 'toggle-loan-settlement') {
+      editingLoanSettlementId = editingLoanSettlementId === btn.dataset.id ? null : btn.dataset.id;
+      render();
+      return;
+    }
     if (action === 'cancel-edit-loan-settlement') { editingLoanSettlementId = null; render(); return; }
     if (action === 'edit-loan') { editingLoanId = btn.dataset.id; render(); return; }
     if (action === 'cancel-loan-edit') { editingLoanId = null; render(); return; }
