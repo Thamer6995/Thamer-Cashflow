@@ -1374,12 +1374,18 @@
   //  - Opening/closing balances roll forward month to month, separately
   //    for the forecast track and the actual track, exactly like the
   //    existing monthly summary calculation (opening + net).
-  var FORECAST_START_MONTH = 8;
-  var FORECAST_END_MONTH = 12;
+  // 2026 is a partial transition year (everything starts August 1), so its
+  // active range is August-December only. From 2027 onward a full calendar
+  // year is available, so the range widens to January-December automatically
+  // — no manual change needed once the year rolls over.
+  function forecastMonthRange(year) {
+    return year === 2026 ? { start: 8, end: 12 } : { start: 1, end: 12 };
+  }
 
   function forecastYearKeys(year) {
+    var range = forecastMonthRange(year);
     var keys = [];
-    for (var m = FORECAST_START_MONTH; m <= FORECAST_END_MONTH; m++) keys.push(year + '-' + pad2(m));
+    for (var m = range.start; m <= range.end; m++) keys.push(year + '-' + pad2(m));
     return keys;
   }
 
@@ -2403,9 +2409,10 @@
       return row;
     }
 
-    function renderBudgetBulkMonthChips(containerId, activeMonths) {
+    function renderBudgetBulkMonthChips(containerId, activeMonths, year) {
+      var range = forecastMonthRange(year);
       var html = '<div class="month-chip-grid" id="' + containerId + '">';
-      for (var m = FORECAST_START_MONTH; m <= FORECAST_END_MONTH; m++) {
+      for (var m = range.start; m <= range.end; m++) {
         var isActive = activeMonths.indexOf(m) !== -1;
         html += '<button type="button" class="month-chip' + (isActive ? ' active' : '') + '" data-action="toggle-month-chip" data-month="' + m + '">' + MONTHS[m - 1] + '</button>';
       }
@@ -2416,6 +2423,7 @@
       var monthBudgets = state.budgets[c.id] || {};
       var prefill = monthBudgets[currentMonth] || '';
       var curMonthNum = parseInt(currentMonth.split('-')[1], 10);
+      var curYear = parseInt(currentMonth.split('-')[0], 10);
       var existingHtml = '';
       if (info.keys.length > 0) {
         var chips = info.keys.map(function (mk) {
@@ -2433,7 +2441,7 @@
         '<button type="button" class="edit-link" data-action="select-all-months" data-container="budget-bulk-months">' + t('recurring_select_all') + '</button>' +
         '<button type="button" class="edit-link" data-action="clear-all-months" data-container="budget-bulk-months">' + t('recurring_clear_all') + '</button>' +
         '</div>' +
-        renderBudgetBulkMonthChips('budget-bulk-months', [curMonthNum]) +
+        renderBudgetBulkMonthChips('budget-bulk-months', [curMonthNum], curYear) +
         '</div>' +
         '<div id="budget-bulk-err" class="err"></div>' +
         '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('budget_bulk_apply_btn') + '</button>' +
@@ -2637,7 +2645,8 @@
 
   function renderForecast() {
     var data = computeAnnualForecast(forecastYear);
-    var rangeLabel = formatMonthLabel(forecastYear + '-' + pad2(FORECAST_START_MONTH)) + ' – ' + formatMonthLabel(forecastYear + '-' + pad2(FORECAST_END_MONTH));
+    var fcRange = forecastMonthRange(forecastYear);
+    var rangeLabel = formatMonthLabel(forecastYear + '-' + pad2(fcRange.start)) + ' – ' + formatMonthLabel(forecastYear + '-' + pad2(fcRange.end));
     return (
       '<div class="fc-actions"><h2 class="section-title" style="margin:0;">' + t('forecast_title') + ' (' + rangeLabel + ')</h2>' +
       '<button class="export-btn" data-action="export-forecast">' + t('forecast_export_btn') + '</button></div>' +
