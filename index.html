@@ -2380,6 +2380,15 @@
       return row;
     }
 
+    function renderBudgetBulkMonthChips(containerId, activeMonths) {
+      var html = '<div class="month-chip-grid" id="' + containerId + '">';
+      for (var m = FORECAST_START_MONTH; m <= FORECAST_END_MONTH; m++) {
+        var isActive = activeMonths.indexOf(m) !== -1;
+        html += '<button type="button" class="month-chip' + (isActive ? ' active' : '') + '" data-action="toggle-month-chip" data-month="' + m + '">' + MONTHS[m - 1] + '</button>';
+      }
+      return html + '</div>';
+    }
+
     function renderBudgetBulkPanel(c, info) {
       var monthBudgets = state.budgets[c.id] || {};
       var prefill = monthBudgets[currentMonth] || '';
@@ -2401,7 +2410,7 @@
         '<button type="button" class="edit-link" data-action="select-all-months" data-container="budget-bulk-months">' + t('recurring_select_all') + '</button>' +
         '<button type="button" class="edit-link" data-action="clear-all-months" data-container="budget-bulk-months">' + t('recurring_clear_all') + '</button>' +
         '</div>' +
-        renderRecurringMonthChips('budget-bulk-months', [curMonthNum]) +
+        renderBudgetBulkMonthChips('budget-bulk-months', [curMonthNum]) +
         '</div>' +
         '<div id="budget-bulk-err" class="err"></div>' +
         '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('budget_bulk_apply_btn') + '</button>' +
