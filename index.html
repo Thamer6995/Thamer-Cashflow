@@ -2555,6 +2555,16 @@
     return Math.round(amount) === 0 ? '-' : fcFormatCurrency(amount);
   }
 
+  // Expense figures are stored as positive amounts internally (so the
+  // outflow/net/closing math stays simple), but displayed as negative
+  // numbers in the table so they read as money leaving, in red.
+  function negateCell(cell) {
+    return {
+      forecast: (cell.forecast === null || cell.forecast === undefined) ? cell.forecast : -cell.forecast,
+      actual: (cell.actual === null || cell.actual === undefined) ? cell.actual : -cell.actual
+    };
+  }
+
   function fcLineCell(cell, isCurrent) {
     var hasForecast = cell.forecast !== null && cell.forecast !== undefined;
     var fText = hasForecast ? fcValueText(cell.forecast) : t('forecast_dash');
@@ -2628,11 +2638,11 @@
       rows += '<tr class="fc-empty-row' + (expenseCollapsed ? ' fc-row-hidden' : '') + '"><td colspan="' + totalCols + '">' + t('forecast_no_categories') + '</td></tr>';
     } else {
       data.expenseCats.forEach(function (cat, idx) {
-        rows += renderForecastLineRow('expense-' + cat.id, cat.name, months, todayKey, function (m) { return m.expenseRows[idx]; }, expenseCollapsed);
+        rows += renderForecastLineRow('expense-' + cat.id, cat.name, months, todayKey, function (m) { return negateCell(m.expenseRows[idx]); }, expenseCollapsed);
       });
     }
 
-    rows += renderForecastTotalRow('total-outflows', t('forecast_row_total_outflows'), months, todayKey, function (m) { return m.totalOutflowsForecast; }, function (m) { return m.totalOutflowsActual; });
+    rows += renderForecastTotalRow('total-outflows', t('forecast_row_total_outflows'), months, todayKey, function (m) { return -m.totalOutflowsForecast; }, function (m) { return -m.totalOutflowsActual; });
     rows += renderForecastTotalRow('net', t('forecast_row_net'), months, todayKey, function (m) { return m.netForecast; }, function (m) { return m.netActual; });
     rows += renderForecastTotalRow('closing', t('forecast_row_closing'), months, todayKey, function (m) { return m.closingForecast; }, function (m) { return m.closingActual; });
 
@@ -2685,8 +2695,8 @@
     pushTotalRow(t('forecast_row_total_inflows'), function (m) { return m.totalInflowsForecast; }, function (m) { return m.totalInflowsActual; });
     pushTotalRow(t('forecast_row_total_inflows_opening'), function (m) { return m.totalInflowsPlusOpeningForecast; }, function (m) { return m.totalInflowsPlusOpeningActual; });
     rows.push([t('forecast_section_expense')]);
-    data.expenseCats.forEach(function (cat, idx) { pushLineRow(cat.name, function (m) { return m.expenseRows[idx]; }); });
-    pushTotalRow(t('forecast_row_total_outflows'), function (m) { return m.totalOutflowsForecast; }, function (m) { return m.totalOutflowsActual; });
+    data.expenseCats.forEach(function (cat, idx) { pushLineRow(cat.name, function (m) { return negateCell(m.expenseRows[idx]); }); });
+    pushTotalRow(t('forecast_row_total_outflows'), function (m) { return -m.totalOutflowsForecast; }, function (m) { return -m.totalOutflowsActual; });
     pushTotalRow(t('forecast_row_net'), function (m) { return m.netForecast; }, function (m) { return m.netActual; });
     pushTotalRow(t('forecast_row_closing'), function (m) { return m.closingForecast; }, function (m) { return m.closingActual; });
 
