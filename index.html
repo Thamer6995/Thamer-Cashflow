@@ -398,14 +398,23 @@
   /* ---------- Budget ---------- */
   .budget-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
   .budget-row:last-child{ border-bottom:none; }
-  .budget-row .name{ flex:0 0 140px; font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .budget-row .name{ flex:0 0 140px; display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; }
+  .budget-row .name .txt{ font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .budget-varies-badge{
+    font-size:9.5px; font-weight:700; color:var(--warning); background:rgba(251,191,36,.14);
+    padding:1.5px 6px; border-radius:8px; white-space:nowrap;
+  }
   .budget-row .input-cell{ flex:0 0 168px; display:flex; align-items:center; gap:6px; }
   .budget-row .input-cell input{
     width:100%; min-width:0; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
     border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
   }
-  .budget-multi-btn{ flex-shrink:0; font-size:14px; padding:6px 8px; }
+  .budget-multi-btn{ flex-shrink:0; font-size:14px; padding:6px 8px; position:relative; }
   .budget-multi-btn.active{ background:var(--success-soft); }
+  .budget-multi-btn.varies::after{
+    content:''; position:absolute; top:3px; inset-inline-end:3px; width:7px; height:7px;
+    border-radius:50%; background:var(--warning); border:1.5px solid var(--card);
+  }
   .budget-row .vs{ flex:1; min-width:140px; }
   .budget-row .vs .nums{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--slate); margin-bottom:5px; }
   .budget-row .vs .nums .over{ color:var(--danger); font-weight:700; }
@@ -414,9 +423,17 @@
     background:var(--card-alt); border:1px solid var(--line); border-radius:11px;
     padding:14px; margin:-4px 0 12px;
   }
+  .budget-existing-summary{ margin-bottom:12px; }
+  .budget-existing-summary .lbl{ font-size:11px; color:var(--slate); margin-bottom:6px; }
+  .budget-existing-summary .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .budget-existing-chip{
+    font-size:11px; color:var(--ink-soft); background:var(--card); border:1px solid var(--line);
+    padding:4px 9px; border-radius:8px; white-space:nowrap;
+  }
+  .budget-existing-chip.cur{ border-color:var(--success); color:var(--success); font-weight:700; }
   @media (max-width:640px){
     .budget-row{ flex-wrap:wrap; }
-    .budget-row .name{ flex:1 1 100%; }
+    .budget-row .name{ flex:1 1 100%; flex-direction:row; align-items:center; }
     .budget-row .input-cell{ flex:1 1 168px; }
     .budget-row .vs{ flex:1 1 100%; }
   }
@@ -1051,6 +1068,9 @@
       budget_apply_multi_months: 'تطبيق على عدة أشهر',
       budget_bulk_amount_label: 'المبلغ',
       budget_bulk_apply_btn: 'تطبيق على الأشهر المحددة',
+      budget_varies_badge: '🔀 يختلف بين الأشهر',
+      budget_varies_hint: 'هذا البند له مبالغ ميزانية مختلفة في أشهر مختلفة',
+      budget_existing_values_label: 'القيم المسجّلة حاليًا',
       calendar_title: 'تقويم التدفقات النقدية',
       calendar_desc: 'صافي التدفقات النقدية يوميًا لهذا الشهر، إلى جانب الميزانية أعلاه.',
       weekdays: ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'],
@@ -2326,6 +2346,14 @@
     var actualByCategory = {};
     s.incomeByCategory.concat(s.expenseByCategory).forEach(function (it) { actualByCategory[it.category.id] = it.total; });
 
+    function budgetMonthsInfo(categoryId) {
+      var map = state.budgets[categoryId] || {};
+      var keys = Object.keys(map).sort();
+      var distinct = [];
+      keys.forEach(function (k) { if (distinct.indexOf(map[k]) === -1) distinct.push(map[k]); });
+      return { map: map, keys: keys, varies: distinct.length > 1 };
+    }
+
     function budgetRow(c) {
       var monthBudgets = state.budgets[c.id] || {};
       var budget = monthBudgets[currentMonth] || 0;
@@ -2337,25 +2365,35 @@
         ? ('<span class="' + (isOver ? (c.type === 'expense' ? 'over' : 'under') : '') + '">' + formatCurrency(actual) + '</span> / ' + formatCurrency(budget))
         : ('<span class="mono">' + formatCurrency(actual) + '</span> · ' + t('no_budget_set'));
       var bulkOpen = budgetBulkPanelCategoryId === c.id;
+      var info = budgetMonthsInfo(c.id);
+      var variesBadge = info.varies ? '<span class="budget-varies-badge" title="' + t('budget_varies_hint') + '">' + t('budget_varies_badge') + '</span>' : '';
       var row = (
         '<div class="budget-row">' +
-        '<div class="name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="name"><span class="txt">' + escapeHtml(c.name) + '</span>' + variesBadge + '</div>' +
         '<div class="input-cell"><input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="' + (budget || '') + '" data-action="set-budget" data-id="' + c.id + '">' +
-        '<button type="button" class="icon-btn budget-multi-btn' + (bulkOpen ? ' active' : '') + '" data-action="toggle-budget-bulk" data-id="' + c.id + '" title="' + t('budget_apply_multi_months') + '">📅</button></div>' +
+        '<button type="button" class="icon-btn budget-multi-btn' + (bulkOpen ? ' active' : '') + (info.varies ? ' varies' : '') + '" data-action="toggle-budget-bulk" data-id="' + c.id + '" title="' + t('budget_apply_multi_months') + '">📅</button></div>' +
         '<div class="vs"><div class="nums"><span>' + statusHtml + '</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div></div>' +
         '</div>'
       );
-      if (bulkOpen) row += renderBudgetBulkPanel(c);
+      if (bulkOpen) row += renderBudgetBulkPanel(c, info);
       return row;
     }
 
-    function renderBudgetBulkPanel(c) {
+    function renderBudgetBulkPanel(c, info) {
       var monthBudgets = state.budgets[c.id] || {};
       var prefill = monthBudgets[currentMonth] || '';
       var curMonthNum = parseInt(currentMonth.split('-')[1], 10);
+      var existingHtml = '';
+      if (info.keys.length > 0) {
+        var chips = info.keys.map(function (mk) {
+          return '<span class="budget-existing-chip' + (mk === currentMonth ? ' cur' : '') + '">' + formatMonthLabel(mk) + ': ' + formatCurrency(monthBudgets[mk]) + '</span>';
+        }).join('');
+        existingHtml = '<div class="budget-existing-summary"><div class="lbl">' + t('budget_existing_values_label') + '</div><div class="chips">' + chips + '</div></div>';
+      }
       return (
         '<form class="budget-bulk-panel" id="budget-bulk-form" data-cat-id="' + c.id + '">' +
+        existingHtml +
         '<div class="field"><label>' + t('budget_bulk_amount_label') + ' — ' + escapeHtml(c.name) + '</label>' +
         '<input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" id="budget-bulk-amount" value="' + escapeAttr(String(prefill)) + '"></div>' +
         '<div class="field"><label>' + t('recurring_months_label') + '</label>' +
