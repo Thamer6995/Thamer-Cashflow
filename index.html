@@ -399,19 +399,25 @@
   .budget-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
   .budget-row:last-child{ border-bottom:none; }
   .budget-row .name{ flex:0 0 140px; font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .budget-row .input-cell{ flex:0 0 130px; }
+  .budget-row .input-cell{ flex:0 0 168px; display:flex; align-items:center; gap:6px; }
   .budget-row .input-cell input{
-    width:100%; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
+    width:100%; min-width:0; font-family:inherit; font-size:13px; padding:7px 9px; border-radius:7px;
     border:1px solid var(--line); background:var(--card-alt); color:var(--ink);
   }
+  .budget-multi-btn{ flex-shrink:0; font-size:14px; padding:6px 8px; }
+  .budget-multi-btn.active{ background:var(--success-soft); }
   .budget-row .vs{ flex:1; min-width:140px; }
   .budget-row .vs .nums{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--slate); margin-bottom:5px; }
   .budget-row .vs .nums .over{ color:var(--danger); font-weight:700; }
   .budget-row .vs .nums .under{ color:var(--success); font-weight:700; }
+  .budget-bulk-panel{
+    background:var(--card-alt); border:1px solid var(--line); border-radius:11px;
+    padding:14px; margin:-4px 0 12px;
+  }
   @media (max-width:640px){
     .budget-row{ flex-wrap:wrap; }
     .budget-row .name{ flex:1 1 100%; }
-    .budget-row .input-cell{ flex:1 1 140px; }
+    .budget-row .input-cell{ flex:1 1 168px; }
     .budget-row .vs{ flex:1 1 100%; }
   }
 
@@ -730,6 +736,31 @@
     return [];
   }
 
+  // Budgets used to be a single flat number per category, applied to every
+  // month. They're now per-month (budgets[categoryId][monthKey]). Old flat
+  // values are carried forward onto a generous window of months (a year
+  // back, a year ahead) so nothing a user was already looking at silently
+  // goes blank after this upgrade.
+  function migrateBudgets(parsed) {
+    var raw = parsed.budgets;
+    if (!raw) return {};
+    var keys = Object.keys(raw);
+    var isOldFlatFormat = keys.some(function (k) { return typeof raw[k] === 'number'; });
+    if (!isOldFlatFormat) return raw;
+    var months = [];
+    var cursor = shiftMonth(currentMonthKey(), -12);
+    for (var i = 0; i < 25; i++) { months.push(cursor); cursor = shiftMonth(cursor, 1); }
+    var migrated = {};
+    keys.forEach(function (categoryId) {
+      var val = raw[categoryId];
+      if (typeof val !== 'number') { migrated[categoryId] = val; return; }
+      var perMonth = {};
+      months.forEach(function (mk) { perMonth[mk] = val; });
+      migrated[categoryId] = perMonth;
+    });
+    return migrated;
+  }
+
   function normalizeState(parsed) {
     var d = defaultState();
     return {
@@ -743,7 +774,7 @@
       loanPayments: parsed.loanPayments || [],
       subscriptions: parsed.subscriptions || [],
       investments: parsed.investments || [],
-      budgets: parsed.budgets || {},
+      budgets: migrateBudgets(parsed),
       bankAccounts: migrateBankAccounts(parsed),
       bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
       recurringTransactions: parsed.recurringTransactions || [],
@@ -1011,12 +1042,15 @@
       confirm_delete_recurring: 'هل تريد حذف هذه العملية المتكررة؟',
 
       budget_title: 'الميزانية الشهرية',
-      budget_desc: 'حدّد ميزانية شهرية لكل بند لمقارنتها بالتدفقات الفعلية لهذا الشهر.',
+      budget_desc: 'حدّد ميزانية شهرية لكل بند لمقارنتها بالتدفقات الفعلية لهذا الشهر. الميزانية مستقلة لكل شهر — تقدر تطبّق نفس الرقم على عدة أشهر دفعة وحدة عبر زر 📅.',
       th_budget: 'الميزانية',
       th_actual: 'الفعلي',
       no_budget_set: 'لم تُحدَّد',
       over_budget: 'تجاوز',
       under_budget: 'ضمن الحد',
+      budget_apply_multi_months: 'تطبيق على عدة أشهر',
+      budget_bulk_amount_label: 'المبلغ',
+      budget_bulk_apply_btn: 'تطبيق على الأشهر المحددة',
       calendar_title: 'تقويم التدفقات النقدية',
       calendar_desc: 'صافي التدفقات النقدية يوميًا لهذا الشهر، إلى جانب الميزانية أعلاه.',
       weekdays: ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'],
@@ -1332,7 +1366,7 @@
     function categoryForecast(categoryId, type, monthKey) {
       var rec = recurringForecast(categoryId, type, monthKey);
       if (rec !== null) return rec;
-      var budget = state.budgets[categoryId];
+      var budget = state.budgets[categoryId] && state.budgets[categoryId][monthKey];
       if (budget) return budget;
       return null;
     }
@@ -1489,7 +1523,7 @@
         actualByCategory[it.category.id] = it.total;
       });
       state.categories.forEach(function (c) {
-        var budget = state.budgets[c.id];
+        var budget = state.budgets[c.id] && state.budgets[c.id][mk];
         if (!budget || budget <= 0) return;
         var actual = actualByCategory[c.id] || 0;
         if (c.type === 'expense' && actual > budget) {
@@ -1651,6 +1685,8 @@
   var bankEditRows = null;
   var editingSubId = null;
   var editingInvestmentId = null;
+
+  var budgetBulkPanelCategoryId = null;
 
   var recurringAddType = 'expense';
   var editingRecurringId = null;
@@ -2291,7 +2327,8 @@
     s.incomeByCategory.concat(s.expenseByCategory).forEach(function (it) { actualByCategory[it.category.id] = it.total; });
 
     function budgetRow(c) {
-      var budget = state.budgets[c.id] || 0;
+      var monthBudgets = state.budgets[c.id] || {};
+      var budget = monthBudgets[currentMonth] || 0;
       var actual = actualByCategory[c.id] || 0;
       var pct = budget > 0 ? Math.min(100, Math.round((actual / budget) * 100)) : 0;
       var isOver = c.type === 'expense' ? actual > budget && budget > 0 : actual < budget;
@@ -2299,13 +2336,39 @@
       var statusHtml = budget > 0
         ? ('<span class="' + (isOver ? (c.type === 'expense' ? 'over' : 'under') : '') + '">' + formatCurrency(actual) + '</span> / ' + formatCurrency(budget))
         : ('<span class="mono">' + formatCurrency(actual) + '</span> · ' + t('no_budget_set'));
-      return (
+      var bulkOpen = budgetBulkPanelCategoryId === c.id;
+      var row = (
         '<div class="budget-row">' +
         '<div class="name">' + escapeHtml(c.name) + '</div>' +
-        '<div class="input-cell"><input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="' + (state.budgets[c.id] || '') + '" data-action="set-budget" data-id="' + c.id + '"></div>' +
+        '<div class="input-cell"><input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="' + (budget || '') + '" data-action="set-budget" data-id="' + c.id + '">' +
+        '<button type="button" class="icon-btn budget-multi-btn' + (bulkOpen ? ' active' : '') + '" data-action="toggle-budget-bulk" data-id="' + c.id + '" title="' + t('budget_apply_multi_months') + '">📅</button></div>' +
         '<div class="vs"><div class="nums"><span>' + statusHtml + '</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + ';"></div></div></div>' +
         '</div>'
+      );
+      if (bulkOpen) row += renderBudgetBulkPanel(c);
+      return row;
+    }
+
+    function renderBudgetBulkPanel(c) {
+      var monthBudgets = state.budgets[c.id] || {};
+      var prefill = monthBudgets[currentMonth] || '';
+      var curMonthNum = parseInt(currentMonth.split('-')[1], 10);
+      return (
+        '<form class="budget-bulk-panel" id="budget-bulk-form" data-cat-id="' + c.id + '">' +
+        '<div class="field"><label>' + t('budget_bulk_amount_label') + ' — ' + escapeHtml(c.name) + '</label>' +
+        '<input type="text" inputmode="decimal" step="0.01" min="0" placeholder="0.00" id="budget-bulk-amount" value="' + escapeAttr(String(prefill)) + '"></div>' +
+        '<div class="field"><label>' + t('recurring_months_label') + '</label>' +
+        '<div class="month-select-row">' +
+        '<button type="button" class="edit-link" data-action="select-all-months" data-container="budget-bulk-months">' + t('recurring_select_all') + '</button>' +
+        '<button type="button" class="edit-link" data-action="clear-all-months" data-container="budget-bulk-months">' + t('recurring_clear_all') + '</button>' +
+        '</div>' +
+        renderRecurringMonthChips('budget-bulk-months', [curMonthNum]) +
+        '</div>' +
+        '<div id="budget-bulk-err" class="err"></div>' +
+        '<div class="btn-row"><button type="submit" class="btn-ghost" style="flex:1;">' + t('budget_bulk_apply_btn') + '</button>' +
+        '<button type="button" class="btn-ghost" data-action="cancel-budget-bulk">' + t('cancel') + '</button></div>' +
+        '</form>'
       );
     }
 
@@ -3665,6 +3728,27 @@
       return;
     }
 
+    if (form.id === 'budget-bulk-form') {
+      e.preventDefault();
+      var bCatId = form.dataset.catId;
+      var bAmount = fieldFloat('budget-bulk-amount');
+      var bMonthNums = Array.from(document.querySelectorAll('#budget-bulk-months .month-chip.active')).map(function (el) { return parseInt(el.dataset.month, 10); });
+      var bErrEl = document.getElementById('budget-bulk-err');
+      if (isNaN(bAmount) || bAmount < 0) { bErrEl.textContent = t('err_amount'); return; }
+      if (bMonthNums.length === 0) { bErrEl.textContent = t('err_recurring_months'); return; }
+      var bYear = currentMonth.split('-')[0];
+      state.budgets[bCatId] = state.budgets[bCatId] || {};
+      bMonthNums.forEach(function (m) {
+        var mk = bYear + '-' + pad2(m);
+        if (bAmount === 0) { delete state.budgets[bCatId][mk]; }
+        else { state.budgets[bCatId][mk] = bAmount; }
+      });
+      budgetBulkPanelCategoryId = null;
+      saveState();
+      render();
+      return;
+    }
+
     if (form.id === 'sub-form') {
       e.preventDefault();
       var sName = document.getElementById('sub-name').value.trim();
@@ -3743,11 +3827,12 @@
       return;
     }
     if (el.dataset && el.dataset.action === 'set-budget') {
-      var val = parseFloat(el.value);
+      var val = parseFloat(normalizeDigits(el.value));
+      state.budgets[el.dataset.id] = state.budgets[el.dataset.id] || {};
       if (el.value.trim() === '' || isNaN(val) || val < 0) {
-        delete state.budgets[el.dataset.id];
+        delete state.budgets[el.dataset.id][currentMonth];
       } else {
-        state.budgets[el.dataset.id] = val;
+        state.budgets[el.dataset.id][currentMonth] = val;
       }
       saveState();
       render();
@@ -3876,6 +3961,7 @@
       editingSubId = null;
       editingInvestmentId = null;
       editingRecurringId = null;
+      budgetBulkPanelCategoryId = null;
       chartActive = {};
       txSearchQuery = '';
       txFilterCategoryId = '';
@@ -3884,8 +3970,8 @@
       render();
       return;
     }
-    if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); render(); return; }
-    if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); render(); return; }
+    if (action === 'prev-month') { currentMonth = shiftMonth(currentMonth, -1); budgetBulkPanelCategoryId = null; render(); return; }
+    if (action === 'next-month') { currentMonth = shiftMonth(currentMonth, 1); budgetBulkPanelCategoryId = null; render(); return; }
     if (action === 'prev-forecast-year') { forecastYear -= 1; render(); return; }
     if (action === 'next-forecast-year') { forecastYear += 1; render(); return; }
     if (action === 'fc-toggle-section') {
@@ -3899,6 +3985,13 @@
 
     if (action === 'edit-opening') { editingOpeningBalance = true; render(); return; }
     if (action === 'cancel-edit-opening') { editingOpeningBalance = false; render(); return; }
+
+    if (action === 'toggle-budget-bulk') {
+      budgetBulkPanelCategoryId = budgetBulkPanelCategoryId === btn.dataset.id ? null : btn.dataset.id;
+      render();
+      return;
+    }
+    if (action === 'cancel-budget-bulk') { budgetBulkPanelCategoryId = null; render(); return; }
 
     if (action === 'set-tx-type') {
       var newType = btn.dataset.type;
