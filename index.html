@@ -1414,9 +1414,24 @@
       dash_card_avgspend_last3: 'متوسط آخر 3 أشهر',
 
       dash_card_actioncenter: 'يحتاج انتباه',
-      dash_card_actioncenter_empty: 'لا يوجد ما يحتاج انتباهك حاليًا 👍',
-      dash_action_low_projected_title: 'الرصيد المتوقع منخفض',
-      dash_action_low_projected_msg: 'الرصيد المتوقع نهاية الشهر سيصبح {amount}',
+      dash_card_actioncenter_empty: '✅ لا يوجد أي شيء يحتاج انتباه حاليًا.',
+
+      ac_balance_negative_title: 'الرصيد الحالي سالب',
+      ac_balance_negative_msg: 'رصيدك الحالي {amount} — راجع عملياتك.',
+      ac_projected_negative_title: 'الرصيد المتوقع نهاية الشهر سالب',
+      ac_projected_negative_msg: 'الرصيد المتوقع نهاية الشهر سيصبح {amount}.',
+      ac_balance_below_commitments_title: 'الرصيد لا يغطي الالتزامات المتبقية',
+      ac_balance_below_commitments_msg: 'رصيدك الحالي {balance} أقل من الالتزامات المتبقية هذا الشهر ({commitments}).',
+      ac_cards_limit_title_one: 'بطاقة قاربت أو تجاوزت الحد',
+      ac_cards_limit_title_multi: '{count} بطاقات قاربت أو تجاوزت الحد',
+      ac_loans_due_title_one: 'قسط قرض يستحق قريبًا',
+      ac_loans_due_title_multi: '{count} أقساط قروض تستحق قريبًا',
+      ac_subs_due_title_one: 'اشتراك سيُخصم قريبًا',
+      ac_subs_due_title_multi: '{count} اشتراكات ستُخصم قريبًا',
+      ac_budget_over_title_one: 'بند تجاوز ميزانيته',
+      ac_budget_over_title_multi: '{count} بنود تجاوزت ميزانيتها',
+      ac_investments_maturing_title_one: 'استثمار يستحق قريبًا',
+      ac_investments_maturing_title_multi: '{count} استثمارات تستحق قريبًا',
 
       dash_card_quickactions: 'إجراءات سريعة',
       dash_qa_add_tx: '➕ إضافة عملية',
@@ -1783,6 +1798,40 @@
     return Math.round((candidate - todayMid) / 86400000);
   }
 
+  // Days until the loan's next unpaid installment is due, rolling to next
+  // month once this month's installment has been paid (or its due day has
+  // passed). Mirrors nextSubscriptionDueDays' shape/rounding so both feed
+  // the Action Center the same way. Returns null once the loan is fully
+  // settled (nothing left to be "due").
+  function nextLoanInstallmentDueDays(loan, fromDate) {
+    if (computeLoanPaid(loan.id) >= loan.principal) return null;
+    var todayMid = new Date(fromDate); todayMid.setHours(0, 0, 0, 0);
+    var startDateObj = new Date(loan.startDate + 'T00:00:00');
+    var startDay = startDateObj.getDate();
+
+    function occurrenceInMonth(yy, mm) {
+      var last = new Date(yy, mm + 1, 0).getDate();
+      var d = new Date(yy, mm, Math.min(startDay, last));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    var candidate;
+    if (startDateObj > todayMid) {
+      candidate = occurrenceInMonth(startDateObj.getFullYear(), startDateObj.getMonth());
+    } else {
+      var y = fromDate.getFullYear(), m = fromDate.getMonth();
+      candidate = occurrenceInMonth(y, m);
+      var mk = candidate.getFullYear() + '-' + pad2(candidate.getMonth() + 1);
+      var paidThisMonth = 0;
+      state.loanPayments.forEach(function (p) { if (p.loanId === loan.id && p.date && monthKeyOf(p.date) === mk) paidThisMonth += p.amount; });
+      if (candidate < todayMid || paidThisMonth >= loan.monthlyInstallment) {
+        candidate = occurrenceInMonth(m === 11 ? y + 1 : y, (m + 1) % 12);
+      }
+    }
+    return Math.round((candidate - todayMid) / 86400000);
+  }
+
   function computeNotifications() {
     var list = [];
     var s = state.notificationSettings;
@@ -1904,10 +1953,127 @@
     return { items: items, total: total, count: items.length };
   }
 
+  // The Dashboard's "يحتاج انتباه" (Action Center) — a fixed, dedicated rule
+  // set distinct from the toggleable Notifications-tab alerts
+  // (computeNotifications). Only conditions that call for an actual
+  // decision/action are included; each rule contributes AT MOST one grouped
+  // alert (never one per matching item), ordered roughly by urgency, capped
+  // to 5. Every alert carries a `tab` so clicking it jumps straight to the
+  // relevant page.
+  function computeActionCenterAlerts(currentBalance, projectedBalance, commitmentsTotal, hasForecast) {
+    var alerts = [];
+    var today = new Date();
+    var mk = currentMonthKey();
+
+    if (currentBalance < 0) {
+      alerts.push({ level: 'danger', title: t('ac_balance_negative_title'), message: tf('ac_balance_negative_msg', { amount: formatCurrency(currentBalance) }), tab: 'transactions' });
+    }
+
+    if (hasForecast && projectedBalance < 0) {
+      alerts.push({ level: 'danger', title: t('ac_projected_negative_title'), message: tf('ac_projected_negative_msg', { amount: formatCurrency(projectedBalance) }), tab: 'forecast' });
+    }
+
+    if (commitmentsTotal > 0 && currentBalance < commitmentsTotal) {
+      alerts.push({ level: 'danger', title: t('ac_balance_below_commitments_title'), message: tf('ac_balance_below_commitments_msg', { balance: formatCurrency(currentBalance), commitments: formatCurrency(commitmentsTotal) }), tab: 'commitments' });
+    }
+
+    var overLimitCards = state.creditCards.map(function (c) {
+      var balance = computeCardBalance(c.id);
+      var pct = c.limit > 0 ? Math.round((balance / c.limit) * 100) : 0;
+      return { name: c.name, pct: pct };
+    }).filter(function (c) { return c.pct >= 80; });
+    if (overLimitCards.length > 0) {
+      var cardsDanger = overLimitCards.some(function (c) { return c.pct >= 100; });
+      var cardsList = overLimitCards.map(function (c) { return escapeHtml(c.name) + ' (' + c.pct + '%)'; }).join('، ');
+      alerts.push({
+        level: cardsDanger ? 'danger' : 'warning',
+        title: overLimitCards.length > 1 ? tf('ac_cards_limit_title_multi', { count: overLimitCards.length }) : t('ac_cards_limit_title_one'),
+        message: cardsList,
+        tab: 'cards'
+      });
+    }
+
+    var loansDueSoon = state.loans.map(function (l) {
+      var days = nextLoanInstallmentDueDays(l, today);
+      return days == null ? null : { name: l.name, days: days };
+    }).filter(function (l) { return l && l.days <= 3; });
+    if (loansDueSoon.length > 0) {
+      var loansDanger = loansDueSoon.some(function (l) { return l.days <= 1; });
+      var loansList = loansDueSoon.map(function (l) { return escapeHtml(l.name) + ' (' + dueInDaysLabel(l.days) + ')'; }).join('، ');
+      alerts.push({
+        level: loansDanger ? 'danger' : 'warning',
+        title: loansDueSoon.length > 1 ? tf('ac_loans_due_title_multi', { count: loansDueSoon.length }) : t('ac_loans_due_title_one'),
+        message: loansList,
+        tab: 'loans'
+      });
+    }
+
+    var subsDueSoon = state.subscriptions.filter(function (s) { return s.active; }).map(function (s) {
+      return { name: s.name, days: nextSubscriptionDueDays(s, today) };
+    }).filter(function (s) { return s.days <= 3; });
+    if (subsDueSoon.length > 0) {
+      var subsDanger = subsDueSoon.some(function (s) { return s.days <= 1; });
+      var subsList = subsDueSoon.map(function (s) { return escapeHtml(s.name) + ' (' + dueInDaysLabel(s.days) + ')'; }).join('، ');
+      alerts.push({
+        level: subsDanger ? 'danger' : 'warning',
+        title: subsDueSoon.length > 1 ? tf('ac_subs_due_title_multi', { count: subsDueSoon.length }) : t('ac_subs_due_title_one'),
+        message: subsList,
+        tab: 'subscriptions'
+      });
+    }
+
+    var summaryForBudget = computeMonthSummary(mk);
+    var actualByCategory = {};
+    summaryForBudget.expenseByCategory.forEach(function (it) { actualByCategory[it.category.id] = it.total; });
+    var overBudgetCats = state.categories.filter(function (c) { return c.type === 'expense'; }).map(function (c) {
+      var budget = state.budgets[c.id] && state.budgets[c.id][mk];
+      if (!budget || budget <= 0) return null;
+      var actual = actualByCategory[c.id] || 0;
+      return actual > budget ? { name: c.name } : null;
+    }).filter(Boolean);
+    if (overBudgetCats.length > 0) {
+      var budgetList = overBudgetCats.map(function (c) { return escapeHtml(c.name); }).join('، ');
+      alerts.push({
+        level: 'danger',
+        title: overBudgetCats.length > 1 ? tf('ac_budget_over_title_multi', { count: overBudgetCats.length }) : t('ac_budget_over_title_one'),
+        message: budgetList,
+        tab: 'budget'
+      });
+    }
+
+    var todayMid0 = new Date(today); todayMid0.setHours(0, 0, 0, 0);
+    var maturingSoon = state.investments.map(function (inv) {
+      if (!inv.maturityDate) return null;
+      var days = Math.round((new Date(inv.maturityDate + 'T00:00:00') - todayMid0) / 86400000);
+      return (days >= 0 && days <= 7) ? { name: inv.type || inv.platform || t('tab_investments'), days: days } : null;
+    }).filter(Boolean);
+    if (maturingSoon.length > 0) {
+      var maturingList = maturingSoon.map(function (inv) { return escapeHtml(inv.name) + ' (' + dueInDaysLabel(inv.days) + ')'; }).join('، ');
+      alerts.push({
+        level: 'warning',
+        title: maturingSoon.length > 1 ? tf('ac_investments_maturing_title_multi', { count: maturingSoon.length }) : t('ac_investments_maturing_title_one'),
+        message: maturingList,
+        tab: 'investments'
+      });
+    }
+
+    alerts.sort(function (a, b) {
+      var av = a.level === 'danger' ? 0 : 1, bv = b.level === 'danger' ? 0 : 1;
+      return av - bv;
+    });
+    return alerts.slice(0, 5);
+  }
+
+  function dueInDaysLabel(days) {
+    if (days <= 0) return t('dash_card_commitments_today');
+    if (days === 1) return t('dash_card_commitments_tomorrow');
+    return tf('dash_card_commitments_in_days', { days: days });
+  }
+
   // Single-pass aggregation for the Dashboard tab — every card reads from
   // this one object instead of recomputing its own figures, and every
   // number here traces back to computeMonthSummary/computeAnnualForecast/
-  // computeLoansSummary/computeNotifications etc. (no invented data).
+  // computeLoansSummary/computeActionCenterAlerts etc. (no invented data).
   function computeDashboardData() {
     var mk = currentMonthKey();
     var today = todayStr();
@@ -1972,19 +2138,7 @@
     });
     var avg3MonthDaily = last3Avgs.reduce(function (a, b) { return a + b; }, 0) / last3Avgs.length;
 
-    var actionItems = computeNotifications().slice().sort(function (a, b) {
-      var av = a.level === 'danger' ? 0 : 1, bv = b.level === 'danger' ? 0 : 1;
-      return av - bv;
-    });
-    if (projectedBalance < 0 && monthCell) {
-      actionItems.unshift({
-        level: 'danger',
-        title: t('dash_action_low_projected_title'),
-        message: tf('dash_action_low_projected_msg', { amount: formatCurrency(projectedBalance) }),
-        tab: 'forecast'
-      });
-    }
-    actionItems = actionItems.slice(0, 5);
+    var actionItems = computeActionCenterAlerts(currentBalance, projectedBalance, commitments.total, !!monthCell);
 
     return {
       mk: mk, today: today,
