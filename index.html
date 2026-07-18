@@ -565,6 +565,61 @@
   .donut-center .lbl{ font-size:10.5px; color:var(--slate); margin-bottom:3px; }
   .donut-center .val{ font-size:15px; font-weight:700; color:var(--ink); font-family:'Consolas','SFMono-Regular',ui-monospace,monospace; direction:ltr; unicode-bidi:plaintext; }
 
+  /* ---------- Dashboard ---------- */
+  .dash-header-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .dash-header-row .section-title, .dash-header-row .section-desc{ margin:0; }
+  .dash-header-row .section-title{ margin-bottom:4px; }
+  .dash-customize-btn{ flex-shrink:0; white-space:nowrap; }
+
+  .dash-grid{ display:grid; grid-template-columns:repeat(var(--dash-cols,4),1fr); gap:14px; margin-bottom:16px; align-items:stretch; }
+  .dash-card{ cursor:pointer; transition:border-color .15s ease, transform .08s ease; }
+  .dash-card:hover{ border-color:var(--slate-soft); }
+  .dash-card:active{ transform:scale(.98); }
+  .dash-card.wide{ grid-column:1/-1; cursor:default; }
+  .dash-card.wide:hover{ border-color:var(--line); }
+  .dash-card.wide:active{ transform:none; }
+  .dash-card.danger{ border-color:var(--danger); background:var(--danger-soft); }
+  .dash-k{ font-size:12px; font-weight:600; color:var(--slate); margin-bottom:8px; line-height:1.3; }
+  .dash-v{ font-size:25px; font-weight:800; }
+  .dash-v-md{ font-size:19px; font-weight:800; }
+  .dash-v.negative, .dash-v-md.negative{ color:var(--danger); }
+  .dash-sub{ font-size:12px; color:var(--slate-soft); margin-top:6px; line-height:1.5; }
+  .dash-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:7px; font-size:13px; }
+  .dash-row:first-of-type{ margin-top:2px; }
+  .dash-row-label{ color:var(--ink-soft); }
+  .dash-row-val{ font-weight:700; }
+  .dash-row-net{ border-top:1px solid var(--line); padding-top:7px; margin-top:9px; }
+  .dash-arrow{ font-size:14px; }
+  .dash-arrow.up{ color:var(--danger); }
+  .dash-arrow.down{ color:var(--success); }
+  .dash-wide-title{ margin:0 0 12px; font-size:15px; font-weight:700; }
+  .dash-action-item{ cursor:pointer; }
+  .dash-quick-actions{ display:flex; flex-wrap:wrap; gap:10px; }
+  .dash-qa-btn{
+    appearance:none; border:1.5px solid var(--line); background:var(--card-alt); color:var(--ink);
+    font-family:inherit; font-size:13px; font-weight:600; padding:12px 16px; border-radius:12px; cursor:pointer;
+    flex:1 1 150px; text-align:center;
+  }
+  .dash-qa-btn:hover{ border-color:var(--success); }
+  @media (max-width:720px){ .dash-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:420px){ .dash-grid{ grid-template-columns:1fr; gap:10px; } .dash-v{ font-size:21px; } }
+
+  .dash-modal-sheet{ max-height:85vh; overflow-y:auto; }
+  .dash-modal-sheet textarea{
+    width:100%; font-family:inherit; font-size:13.5px; padding:10px 12px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card-alt); color:var(--ink); resize:vertical; margin-bottom:10px;
+  }
+  .dash-layout-list{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+  .dash-layout-row{
+    display:flex; align-items:center; gap:10px; padding:11px 12px; border:1px solid var(--line);
+    border-radius:11px; background:var(--card-alt); cursor:grab;
+  }
+  .dash-layout-row.dragging{ opacity:.4; }
+  .dash-layout-row.hidden-row{ opacity:.55; }
+  .dash-layout-row .handle{ color:var(--slate-soft); font-size:16px; flex-shrink:0; }
+  .dash-layout-row .name{ flex:1; font-size:13.5px; font-weight:600; color:var(--ink); }
+  .tx-date-filter-note{ font-size:12px; color:var(--slate); }
+
   /* ---------- Quick Add ---------- */
   .fab{
     position:fixed;
@@ -745,6 +800,20 @@
     { id: 'exp-other', name: 'مصاريف أخرى', type: 'expense' }
   ];
 
+  var DASHBOARD_CARD_IDS = ['balance', 'projected', 'commitments', 'netflow', 'cards', 'loans', 'yesterday', 'avgspend', 'actioncenter', 'quickactions'];
+  function defaultDashboardLayout() {
+    return { order: DASHBOARD_CARD_IDS.slice(), hidden: [], columns: 4 };
+  }
+  function normalizeDashboardLayout(raw) {
+    var def = defaultDashboardLayout();
+    if (!raw || typeof raw !== 'object') return def;
+    var order = Array.isArray(raw.order) ? raw.order.filter(function (id) { return DASHBOARD_CARD_IDS.indexOf(id) !== -1; }) : [];
+    DASHBOARD_CARD_IDS.forEach(function (id) { if (order.indexOf(id) === -1) order.push(id); });
+    var hidden = Array.isArray(raw.hidden) ? raw.hidden.filter(function (id) { return DASHBOARD_CARD_IDS.indexOf(id) !== -1; }) : [];
+    var columns = [2, 3, 4].indexOf(raw.columns) !== -1 ? raw.columns : 4;
+    return { order: order, hidden: hidden, columns: columns };
+  }
+
   function defaultState() {
     return {
       openingBalance: null,
@@ -761,7 +830,8 @@
       bankAccounts: [],
       bankBalanceUpdatedAt: null,
       recurringTransactions: [],
-      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true }
+      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true },
+      dashboardLayout: defaultDashboardLayout()
     };
   }
 
@@ -835,7 +905,8 @@
       bankAccounts: migrateBankAccounts(parsed),
       bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
       recurringTransactions: parsed.recurringTransactions || [],
-      notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {})
+      notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
+      dashboardLayout: normalizeDashboardLayout(parsed.dashboardLayout)
     };
   }
 
@@ -899,6 +970,27 @@
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function dateMinusDays(dateStr, n) {
+    var d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() - n);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  // Best-effort amount extraction from a pasted bank SMS, for the Dashboard
+  // "paste bank message" quick action — picks the first plausible positive
+  // number in the text (handles thousands separators and Arabic decimal
+  // separators), then hands it to the existing Quick Add flow for the user
+  // to confirm/adjust. No further parsing (merchant, date, etc) is attempted.
+  function extractAmountFromText(text) {
+    if (!text) return null;
+    var matches = text.match(/\d{1,3}(?:[,٬]\d{3})+(?:[.٫]\d{1,2})?|\d+(?:[.٫]\d{1,2})?/g);
+    if (!matches) return null;
+    for (var i = 0; i < matches.length; i++) {
+      var raw = matches[i].replace(/[,٬]/g, '').replace(/٫/g, '.');
+      var num = parseFloat(raw);
+      if (!isNaN(num) && num > 0) return num;
+    }
+    return null;
+  }
   function formatDateArabic(dateStr) {
     if (!dateStr) return '';
     var parts = dateStr.split('-');
@@ -956,6 +1048,7 @@
   // ---------------- i18n ----------------
   var I18N = {
       brand_title: 'متابعة التدفقات النقدية الشهرية',
+      tab_dashboard: 'الرئيسية',
       tab_summary: 'الملخص الشهري',
       tab_transactions: 'العمليات اليومية',
       tab_reports: 'التقارير',
@@ -1268,7 +1361,90 @@
       forecast_row_net: 'صافي الشهر',
       forecast_row_closing: 'الرصيد الختامي',
       forecast_no_categories: 'لا توجد بنود مضافة بعد',
-      forecast_methodology_note: 'يعتمد "المتوقع" على العمليات المتكررة المُجدولة لكل بند، وعند عدم توفرها على الميزانية الشهرية المحددة له. أما "الفعلي" فهو مجموع العمليات الحقيقية المسجّلة في التطبيق لنفس البند والشهر. لا تُستخدم أي أرقام افتراضية أو وهمية في هذه الصفحة.'
+      forecast_methodology_note: 'يعتمد "المتوقع" على العمليات المتكررة المُجدولة لكل بند، وعند عدم توفرها على الميزانية الشهرية المحددة له. أما "الفعلي" فهو مجموع العمليات الحقيقية المسجّلة في التطبيق لنفس البند والشهر. لا تُستخدم أي أرقام افتراضية أو وهمية في هذه الصفحة.',
+
+      tx_date_filter_note: 'مُصفّاة على تاريخ {date} فقط',
+
+      dash_title: 'نظرة عامة',
+      dash_desc: 'ملخص سريع لوضعك المالي.',
+      dash_customize_btn: '⚙️ تخصيص الصفحة',
+      dash_updated_at: 'آخر تحديث: {date}',
+
+      dash_card_balance: 'الرصيد الحالي',
+      dash_card_balance_no_tx: 'لا توجد عمليات بعد',
+
+      dash_card_projected: 'الرصيد المتوقع نهاية الشهر',
+      dash_days_left_today: 'آخر يوم في الشهر',
+      dash_card_projected_day_left: 'يوم واحد متبقٍ',
+      dash_card_projected_days_left: '{days} يومًا متبقيًا',
+
+      dash_card_commitments: 'الالتزامات المتبقية هذا الشهر',
+      dash_card_commitments_none: 'لا توجد التزامات معروفة متبقية',
+      dash_card_commitments_count_line: '{count} التزامات',
+      dash_card_commitments_nearest: 'أقربها',
+      dash_card_commitments_today: 'اليوم',
+      dash_card_commitments_tomorrow: 'غدًا',
+      dash_card_commitments_in_days: 'بعد {days} يوم',
+
+      dash_card_netflow: 'صافي التدفق هذا الشهر',
+      dash_card_netflow_income: 'الدخل',
+      dash_card_netflow_expense: 'المصروف',
+      dash_card_netflow_net: 'الصافي',
+
+      dash_card_cards: 'البطاقات الائتمانية',
+      dash_card_cards_available: 'المتاح',
+      dash_card_cards_used: 'المستخدم',
+      dash_card_cards_usage: 'نسبة الاستخدام',
+      dash_card_cards_none: 'لا توجد بطاقات مضافة',
+
+      dash_card_loans: 'القروض',
+      dash_card_loans_settlement: 'إجمالي مبلغ التسوية المبكرة',
+      dash_card_loans_count_line: '{count} قروض',
+      dash_card_loans_installments_line: '{amount} شهريًا',
+      dash_card_loans_none: 'لا توجد قروض مضافة',
+
+      dash_card_yesterday: 'عمليات أمس',
+      dash_card_yesterday_income: 'دخل',
+      dash_card_yesterday_expense: 'مصروف',
+      dash_card_yesterday_net: 'الصافي',
+      dash_card_yesterday_count_line: '{count} عمليات',
+
+      dash_card_avgspend: 'متوسط الصرف اليومي',
+      dash_card_avgspend_this_month: 'هذا الشهر',
+      dash_card_avgspend_last3: 'متوسط آخر 3 أشهر',
+
+      dash_card_actioncenter: 'يحتاج انتباه',
+      dash_card_actioncenter_empty: 'لا يوجد ما يحتاج انتباهك حاليًا 👍',
+      dash_action_low_projected_title: 'الرصيد المتوقع منخفض',
+      dash_action_low_projected_msg: 'الرصيد المتوقع نهاية الشهر سيصبح {amount}',
+
+      dash_card_quickactions: 'إجراءات سريعة',
+      dash_qa_add_tx: '➕ إضافة عملية',
+      dash_qa_add_income: '💰 إضافة دخل',
+      dash_qa_add_expense: '💸 إضافة مصروف',
+      dash_qa_paste_bank: '📋 لصق رسالة البنك',
+      dash_qa_open_forecast: '📈 فتح التوقعات',
+      dash_qa_open_search: '🔍 البحث الذكي',
+
+      dash_bank_paste_title: 'لصق رسالة البنك',
+      dash_bank_paste_hint: 'الصق نص رسالة البنك، وراح نحاول نستخرج المبلغ منها تلقائيًا لفتح الإضافة السريعة معبأة به.',
+      dash_bank_paste_placeholder: 'مثال: تم خصم مبلغ 145.50 ريال من حسابك...',
+      dash_bank_paste_btn: 'استخراج المبلغ',
+      dash_bank_paste_not_found: 'ما قدرنا نلقى مبلغ واضح في النص، جرّب تعدّله أو أدخل المبلغ يدويًا.',
+
+      dash_customize_title: 'تخصيص الصفحة الرئيسية',
+      dash_customize_hint: 'فعّل أو أخفِ أي بطاقة، وأعد ترتيبها بالسحب والإفلات.',
+      dash_customize_columns_label: 'عدد الأعمدة (نسخة الكمبيوتر)',
+      dash_customize_reset_btn: 'إعادة الضبط الافتراضي',
+      dash_customize_close_btn: 'تم',
+      confirm_reset_dashboard: 'إعادة صفحة الرئيسية لترتيبها الافتراضي؟',
+
+      dash_commitments_title: 'الالتزامات القادمة هذا الشهر',
+      dash_commitments_back: 'رجوع للرئيسية',
+      dash_commitments_empty: 'لا توجد التزامات معروفة متبقية هذا الشهر.',
+      dash_commitments_source_loan: 'قسط قرض',
+      dash_commitments_source_subscription: 'اشتراك',
+      dash_commitments_source_recurring: 'عملية متكررة'
   };
 
   function t(key) { return I18N[key] || key; }
@@ -1620,7 +1796,8 @@
           list.push({
             level: pct >= 90 ? 'danger' : 'warning',
             title: c.name,
-            message: tf('notif_msg_card', { pct: pct, used: formatCurrency(balance), limit: formatCurrency(c.limit) })
+            message: tf('notif_msg_card', { pct: pct, used: formatCurrency(balance), limit: formatCurrency(c.limit) }),
+            tab: 'cards'
           });
         }
       });
@@ -1636,7 +1813,8 @@
             title: sub.name,
             message: days === 0
               ? tf('notif_msg_sub_today', { name: sub.name, amount: formatCurrency(sub.amount) })
-              : tf('notif_msg_sub_days', { name: sub.name, days: days, amount: formatCurrency(sub.amount) })
+              : tf('notif_msg_sub_days', { name: sub.name, days: days, amount: formatCurrency(sub.amount) }),
+            tab: 'subscriptions'
           });
         }
       });
@@ -1654,9 +1832,9 @@
         if (!budget || budget <= 0) return;
         var actual = actualByCategory[c.id] || 0;
         if (c.type === 'expense' && actual > budget) {
-          list.push({ level: 'danger', title: c.name, message: tf('notif_msg_budget_over', { name: c.name, amount: formatCurrency(actual - budget) }) });
+          list.push({ level: 'danger', title: c.name, message: tf('notif_msg_budget_over', { name: c.name, amount: formatCurrency(actual - budget) }), tab: 'budget' });
         } else if (c.type === 'income' && actual < budget) {
-          list.push({ level: 'warning', title: c.name, message: tf('notif_msg_income_under', { name: c.name, amount: formatCurrency(budget - actual) }) });
+          list.push({ level: 'warning', title: c.name, message: tf('notif_msg_income_under', { name: c.name, amount: formatCurrency(budget - actual) }), tab: 'budget' });
         }
       });
     }
@@ -1669,12 +1847,157 @@
         list.push({
           level: Math.abs(diff) >= 100 ? 'danger' : 'warning',
           title: t('stat_bank_balance'),
-          message: tf('notif_msg_bank', { amount: (diff > 0 ? '+' : '') + formatCurrency(diff) })
+          message: tf('notif_msg_bank', { amount: (diff > 0 ? '+' : '') + formatCurrency(diff) }),
+          tab: 'summary'
         });
       }
     }
 
     return list;
+  }
+
+  // Loan installments, active subscriptions, and scheduled-but-not-yet-fired
+  // recurring expenses still due between today and the end of the given
+  // month. Shared by the Dashboard commitments card and the full
+  // Commitments detail page so the figure is always identical in both.
+  function computeUpcomingCommitments(mk, todayDateStr) {
+    var dim = daysInMonth(mk);
+    var todayDay = parseInt(todayDateStr.slice(8, 10), 10);
+    var catById = {};
+    state.categories.forEach(function (c) { catById[c.id] = c; });
+    var items = [];
+
+    state.subscriptions.forEach(function (sub) {
+      if (!sub.active) return;
+      var day = Math.min(dim, Math.max(1, sub.billingDay));
+      if (day < todayDay) return;
+      items.push({ label: sub.name, amount: sub.amount, date: mk + '-' + pad2(day), daysUntil: day - todayDay, tab: 'subscriptions', source: 'subscription' });
+    });
+
+    state.loans.forEach(function (loan) {
+      if (monthKeyOf(loan.startDate) > mk) return;
+      if (computeLoanPaid(loan.id) >= loan.principal) return;
+      var paidThisMonth = 0;
+      state.loanPayments.forEach(function (p) { if (p.loanId === loan.id && p.date && monthKeyOf(p.date) === mk) paidThisMonth += p.amount; });
+      var remaining = loan.monthlyInstallment - paidThisMonth;
+      if (remaining <= 0) return;
+      var startDay = parseInt(loan.startDate.slice(8, 10), 10) || 1;
+      var dueDay = Math.min(dim, startDay);
+      if (dueDay < todayDay) return;
+      items.push({ label: loan.name, amount: remaining, date: mk + '-' + pad2(dueDay), daysUntil: dueDay - todayDay, tab: 'loans', source: 'loan' });
+    });
+
+    var monthNum = parseInt(mk.split('-')[1], 10);
+    state.recurringTransactions.forEach(function (rule) {
+      if (rule.type !== 'expense') return;
+      if (rule.months && rule.months.length && rule.months.indexOf(monthNum) === -1) return;
+      var already = state.transactions.some(function (tx) { return tx.recurringId === rule.id && monthKeyOf(tx.date) === mk; });
+      if (already) return;
+      var day = Math.min(rule.dayOfMonth, dim);
+      if (day < todayDay) return;
+      var cat = catById[rule.categoryId];
+      items.push({ label: cat ? cat.name : t('no_category_label'), amount: rule.amount, date: mk + '-' + pad2(day), daysUntil: day - todayDay, tab: 'recurring', source: 'recurring' });
+    });
+
+    items.sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    var total = items.reduce(function (s, it) { return s + it.amount; }, 0);
+    return { items: items, total: total, count: items.length };
+  }
+
+  // Single-pass aggregation for the Dashboard tab — every card reads from
+  // this one object instead of recomputing its own figures, and every
+  // number here traces back to computeMonthSummary/computeAnnualForecast/
+  // computeLoansSummary/computeNotifications etc. (no invented data).
+  function computeDashboardData() {
+    var mk = currentMonthKey();
+    var today = todayStr();
+    var summary = computeMonthSummary(mk);
+    var currentBalance = summary.closingBalance;
+
+    var lastTxDate = null;
+    state.transactions.forEach(function (tx) { if (!lastTxDate || tx.date > lastTxDate) lastTxDate = tx.date; });
+
+    var year = parseInt(mk.slice(0, 4), 10);
+    var forecast = computeAnnualForecast(year);
+    var monthCell = null;
+    for (var i = 0; i < forecast.months.length; i++) {
+      if (forecast.months[i].monthKey === mk) { monthCell = forecast.months[i]; break; }
+    }
+    var remainingIncome = 0, remainingExpense = 0;
+    if (monthCell) {
+      remainingIncome = Math.max(0, monthCell.totalInflowsForecast - monthCell.totalInflowsActual);
+      remainingExpense = Math.max(0, monthCell.totalOutflowsForecast - monthCell.totalOutflowsActual);
+    }
+    var projectedBalance = currentBalance + remainingIncome - remainingExpense;
+    var dim = daysInMonth(mk);
+    var todayDay = parseInt(today.slice(8, 10), 10);
+    var daysLeftInMonth = Math.max(0, dim - todayDay);
+
+    var commitments = computeUpcomingCommitments(mk, today);
+
+    var netFlow = summary.totalIncome - summary.totalExpense;
+
+    var cardsLimitTotal = 0, cardsUsedTotal = 0;
+    state.creditCards.forEach(function (c) {
+      cardsLimitTotal += c.limit;
+      cardsUsedTotal += computeCardBalance(c.id);
+    });
+    var cardsAvailable = cardsLimitTotal - cardsUsedTotal;
+    var cardsUsagePct = cardsLimitTotal > 0 ? Math.round((cardsUsedTotal / cardsLimitTotal) * 100) : 0;
+
+    var loansSummary = computeLoansSummary();
+    var settlementTotal = 0;
+    state.loans.forEach(function (loan) {
+      var sched = getLoanSettlementSchedule(loan);
+      var v = sched[mk];
+      if (v != null) settlementTotal += v;
+    });
+
+    var yestDate = dateMinusDays(today, 1);
+    var yestIncome = 0, yestExpense = 0, yestCount = 0;
+    state.transactions.forEach(function (tx) {
+      if (tx.date !== yestDate) return;
+      yestCount++;
+      if (tx.type === 'income') yestIncome += tx.amount; else yestExpense += tx.amount;
+    });
+    var yestNet = yestIncome - yestExpense;
+
+    var elapsedDays = Math.max(1, todayDay);
+    var avgDailySpendThisMonth = summary.totalExpense / elapsedDays;
+    var last3Keys = [shiftMonth(mk, -1), shiftMonth(mk, -2), shiftMonth(mk, -3)];
+    var last3Avgs = last3Keys.map(function (pmk) {
+      var s = computeMonthSummary(pmk);
+      var d = daysInMonth(pmk);
+      return d > 0 ? s.totalExpense / d : 0;
+    });
+    var avg3MonthDaily = last3Avgs.reduce(function (a, b) { return a + b; }, 0) / last3Avgs.length;
+
+    var actionItems = computeNotifications().slice().sort(function (a, b) {
+      var av = a.level === 'danger' ? 0 : 1, bv = b.level === 'danger' ? 0 : 1;
+      return av - bv;
+    });
+    if (projectedBalance < 0 && monthCell) {
+      actionItems.unshift({
+        level: 'danger',
+        title: t('dash_action_low_projected_title'),
+        message: tf('dash_action_low_projected_msg', { amount: formatCurrency(projectedBalance) }),
+        tab: 'forecast'
+      });
+    }
+    actionItems = actionItems.slice(0, 5);
+
+    return {
+      mk: mk, today: today,
+      currentBalance: currentBalance, lastTxDate: lastTxDate, hasTx: state.transactions.length > 0,
+      projectedBalance: projectedBalance, hasForecast: !!monthCell, daysLeftInMonth: daysLeftInMonth,
+      commitments: commitments,
+      totalIncome: summary.totalIncome, totalExpense: summary.totalExpense, netFlow: netFlow,
+      cardsLimitTotal: cardsLimitTotal, cardsUsedTotal: cardsUsedTotal, cardsAvailable: cardsAvailable, cardsUsagePct: cardsUsagePct, hasCards: state.creditCards.length > 0,
+      loansSummary: loansSummary, settlementTotal: settlementTotal, loansCount: state.loans.length,
+      yestDate: yestDate, yestIncome: yestIncome, yestExpense: yestExpense, yestNet: yestNet, yestCount: yestCount,
+      avgDailySpendThisMonth: avgDailySpendThisMonth, avg3MonthDaily: avg3MonthDaily,
+      actionItems: actionItems
+    };
   }
 
   function browserNotifSupported() { return typeof Notification !== 'undefined'; }
@@ -1792,7 +2115,7 @@
 
   // ---------------- App state ----------------
   var state = loadState();
-  var currentTab = 'summary';
+  var currentTab = 'dashboard';
   var currentMonth = currentMonthKey();
   var editingTransactionId = null;
   var editingCategoryId = null;
@@ -1826,12 +2149,19 @@
   var txSearchQuery = '';
   var txFilterCategoryId = '';
   var txFilterType = '';
+  var txFilterDate = '';
+  var focusTxSearchOnce = false;
 
   var quickAddOpen = false;
   var quickAddType = 'expense';
   var quickAddPrefillAmount = '';
   var focusQaCategoryOnce = false;
   var urlAutoSaveToast = false;
+
+  var dashCustomizeOpen = false;
+  var dashBankPasteOpen = false;
+  var dashBankPasteError = '';
+  var dashDragId = null;
 
   // Support opening straight into a pre-filled Quick Add via a URL, e.g.
   // from an iOS Shortcut: index.html?amount=25&type=expense
@@ -1918,6 +2248,11 @@
       focusQaCategoryOnce = false;
       var qaCatEl = document.getElementById('qa-category');
       if (qaCatEl) qaCatEl.focus();
+    }
+    if (focusTxSearchOnce) {
+      focusTxSearchOnce = false;
+      var txSearchEl = document.getElementById('tx-search-input');
+      if (txSearchEl) txSearchEl.focus();
     }
     if (urlAutoSaveToast) {
       urlAutoSaveToast = false;
@@ -2080,6 +2415,7 @@
 
   function renderHeader() {
     var tabs = [
+      { key: 'dashboard', label: t('tab_dashboard') },
       { key: 'summary', label: t('tab_summary') },
       { key: 'transactions', label: t('tab_transactions') },
       { key: 'recurring', label: t('tab_recurring') },
@@ -2126,6 +2462,7 @@
   }
 
   function renderTabContent() {
+    if (currentTab === 'dashboard') return renderDashboard();
     if (currentTab === 'summary') return renderSummary();
     if (currentTab === 'transactions') return renderTransactions();
     if (currentTab === 'recurring') return renderRecurring();
@@ -2139,7 +2476,304 @@
     if (currentTab === 'notifications') return renderNotifications();
     if (currentTab === 'categories') return renderCategories();
     if (currentTab === 'forecast') return renderForecast();
+    if (currentTab === 'commitments') return renderCommitments();
     return '';
+  }
+
+  // Shared reset of per-tab transient UI state, used whenever the user
+  // navigates to a different tab (either via the nav bar or a Dashboard
+  // card/deep-link), so stale edit/filter state from the previous tab never
+  // leaks into the next one.
+  function resetTabTransientState() {
+    editingTransactionId = null;
+    editingCategoryId = null;
+    editingOpeningBalance = false;
+    selectedCardId = null;
+    editingCardId = null;
+    editingCardTxId = null;
+    selectedLoanId = null;
+    editingLoanId = null;
+    editingLoanPaymentId = null;
+    editingLoanSettlementId = null;
+    editingBankBalance = false;
+    editingSubId = null;
+    editingInvestmentId = null;
+    editingRecurringId = null;
+    budgetBulkPanelCategoryId = null;
+    chartActive = {};
+    txSearchQuery = '';
+    txFilterCategoryId = '';
+    txFilterType = '';
+    txFilterDate = '';
+    quickAddOpen = false;
+  }
+
+  // ---------------- Dashboard tab ----------------
+  function dashCardWrap(sizeCls, attrsHtml, innerHtml, extraCls) {
+    var cls = 'card dash-card ' + sizeCls + (extraCls ? ' ' + extraCls : '');
+    return '<div class="' + cls + '"' + (attrsHtml ? ' ' + attrsHtml : '') + '>' + innerHtml + '</div>';
+  }
+
+  function renderDashBalanceCard(d) {
+    var neg = d.currentBalance < 0;
+    var subText = d.hasTx ? tf('dash_updated_at', { date: formatDateArabic(d.lastTxDate) }) : t('dash_card_balance_no_tx');
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_balance') + '</div>' +
+      '<div class="dash-v' + (neg ? ' negative' : '') + ' mono">' + formatCurrency(d.currentBalance) + '</div>' +
+      '<div class="dash-sub">' + escapeHtml(subText) + '</div>'
+    );
+    return dashCardWrap('lg', 'data-action="tab" data-tab="transactions"', inner, neg ? 'danger' : '');
+  }
+
+  function renderDashProjectedCard(d) {
+    var neg = d.projectedBalance < 0;
+    var daysText = d.daysLeftInMonth === 0 ? t('dash_days_left_today')
+      : d.daysLeftInMonth === 1 ? t('dash_card_projected_day_left')
+      : tf('dash_card_projected_days_left', { days: d.daysLeftInMonth });
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_projected') + '</div>' +
+      '<div class="dash-v' + (neg ? ' negative' : '') + ' mono">' + formatCurrency(d.projectedBalance) + '</div>' +
+      '<div class="dash-sub">' + daysText + '</div>'
+    );
+    return dashCardWrap('lg', 'data-action="tab" data-tab="forecast"', inner, neg ? 'danger' : '');
+  }
+
+  function renderDashCommitmentsCard(d) {
+    var c = d.commitments;
+    var nearestLine;
+    if (c.items.length === 0) {
+      nearestLine = t('dash_card_commitments_none');
+    } else {
+      var near = c.items[0];
+      var daysTxt = near.daysUntil === 0 ? t('dash_card_commitments_today')
+        : near.daysUntil === 1 ? t('dash_card_commitments_tomorrow')
+        : tf('dash_card_commitments_in_days', { days: near.daysUntil });
+      nearestLine = t('dash_card_commitments_nearest') + ' ' + escapeHtml(near.label) + ' — ' + daysTxt;
+    }
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_commitments') + '</div>' +
+      '<div class="dash-v mono">' + formatCurrency(c.total) + '</div>' +
+      '<div class="dash-sub">' + tf('dash_card_commitments_count_line', { count: c.count }) + '</div>' +
+      '<div class="dash-sub">' + nearestLine + '</div>'
+    );
+    return dashCardWrap('lg', 'data-action="tab" data-tab="commitments"', inner, '');
+  }
+
+  function renderDashNetflowCard(d) {
+    var netPos = d.netFlow >= 0;
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_netflow') + '</div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_netflow_income') + '</span><span class="dash-row-val positive mono">' + formatCurrency(d.totalIncome) + '</span></div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_netflow_expense') + '</span><span class="dash-row-val negative mono">' + formatCurrency(d.totalExpense) + '</span></div>' +
+      '<div class="dash-row dash-row-net"><span class="dash-row-label">' + t('dash_card_netflow_net') + '</span><span class="dash-row-val ' + (netPos ? 'positive' : 'negative') + ' mono">' + (netPos ? '+' : '') + formatCurrency(d.netFlow) + '</span></div>'
+    );
+    return dashCardWrap('lg', 'data-action="tab" data-tab="reports"', inner, '');
+  }
+
+  function renderDashCardsCard(d) {
+    if (!d.hasCards) {
+      var innerEmpty = '<div class="dash-k">' + t('dash_card_cards') + '</div><div class="dash-sub" style="margin-top:8px;">' + t('dash_card_cards_none') + '</div>';
+      return dashCardWrap('md', 'data-action="tab" data-tab="cards"', innerEmpty, '');
+    }
+    var levelCls = usageLevelClass(d.cardsUsagePct);
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_cards') + '</div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_cards_available') + '</span><span class="dash-row-val mono">' + formatCurrency(d.cardsAvailable) + '</span></div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_cards_used') + '</span><span class="dash-row-val mono">' + formatCurrency(d.cardsUsedTotal) + '</span></div>' +
+      '<div class="usage-track" style="margin-top:8px;"><div class="usage-fill ' + levelCls + '" style="width:' + d.cardsUsagePct + '%"></div></div>' +
+      '<div class="dash-sub" style="margin-top:6px;">' + t('dash_card_cards_usage') + ': ' + d.cardsUsagePct + '%</div>'
+    );
+    return dashCardWrap('md', 'data-action="tab" data-tab="cards"', inner, '');
+  }
+
+  function renderDashLoansCard(d) {
+    if (d.loansCount === 0) {
+      var innerEmpty = '<div class="dash-k">' + t('dash_card_loans') + '</div><div class="dash-sub" style="margin-top:8px;">' + t('dash_card_loans_none') + '</div>';
+      return dashCardWrap('md', 'data-action="tab" data-tab="loans"', innerEmpty, '');
+    }
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_loans_settlement') + '</div>' +
+      '<div class="dash-v-md mono">' + formatCurrency(d.settlementTotal) + '</div>' +
+      '<div class="dash-sub">' + tf('dash_card_loans_count_line', { count: d.loansCount }) + '</div>' +
+      '<div class="dash-sub">' + tf('dash_card_loans_installments_line', { amount: formatCurrency(d.loansSummary.totalInstallments) }) + '</div>'
+    );
+    return dashCardWrap('md', 'data-action="tab" data-tab="loans"', inner, '');
+  }
+
+  function renderDashYesterdayCard(d) {
+    var netPos = d.yestNet >= 0;
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_yesterday') + '</div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_yesterday_income') + '</span><span class="dash-row-val positive mono">' + formatCurrency(d.yestIncome) + '</span></div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_yesterday_expense') + '</span><span class="dash-row-val negative mono">' + formatCurrency(d.yestExpense) + '</span></div>' +
+      '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_yesterday_net') + '</span><span class="dash-row-val ' + (netPos ? 'positive' : 'negative') + ' mono">' + (netPos ? '+' : '') + formatCurrency(d.yestNet) + '</span></div>' +
+      '<div class="dash-sub">' + tf('dash_card_yesterday_count_line', { count: d.yestCount }) + '</div>'
+    );
+    return dashCardWrap('md', 'data-action="dash-open-yesterday"', inner, '');
+  }
+
+  function renderDashAvgSpendCard(d) {
+    var higher = d.avgDailySpendThisMonth > d.avg3MonthDaily;
+    var arrow = higher ? '<span class="dash-arrow up">▲</span>' : '<span class="dash-arrow down">▼</span>';
+    var inner = (
+      '<div class="dash-k">' + t('dash_card_avgspend') + '</div>' +
+      '<div class="dash-v-md mono">' + formatCurrency(d.avgDailySpendThisMonth) + ' ' + arrow + '</div>' +
+      '<div class="dash-sub">' + t('dash_card_avgspend_this_month') + '</div>' +
+      '<div class="dash-sub">' + t('dash_card_avgspend_last3') + ': ' + formatCurrency(d.avg3MonthDaily) + '</div>'
+    );
+    return dashCardWrap('md', 'data-action="tab" data-tab="charts"', inner, '');
+  }
+
+  function renderDashActionCenterCard(d) {
+    var itemsHtml;
+    if (d.actionItems.length === 0) {
+      itemsHtml = '<p class="empty">' + t('dash_card_actioncenter_empty') + '</p>';
+    } else {
+      itemsHtml = d.actionItems.map(function (a) {
+        var icon = a.level === 'danger' ? '🔴' : '🟡';
+        var attrs = a.tab ? ' data-action="tab" data-tab="' + a.tab + '"' : '';
+        return (
+          '<div class="alert-item dash-action-item ' + a.level + '"' + attrs + '><span class="icon">' + icon + '</span>' +
+          '<div class="body"><div class="title">' + escapeHtml(a.title) + '</div><div class="msg">' + escapeHtml(a.message) + '</div></div></div>'
+        );
+      }).join('');
+    }
+    var inner = '<h3 class="dash-wide-title">' + t('dash_card_actioncenter') + '</h3>' + itemsHtml;
+    return dashCardWrap('wide', '', inner, '');
+  }
+
+  function renderDashQuickActionsCard() {
+    var inner = (
+      '<h3 class="dash-wide-title">' + t('dash_card_quickactions') + '</h3>' +
+      '<div class="dash-quick-actions">' +
+      '<button type="button" class="dash-qa-btn" data-action="dash-quick-add" data-type="">' + t('dash_qa_add_tx') + '</button>' +
+      '<button type="button" class="dash-qa-btn" data-action="dash-quick-add" data-type="income">' + t('dash_qa_add_income') + '</button>' +
+      '<button type="button" class="dash-qa-btn" data-action="dash-quick-add" data-type="expense">' + t('dash_qa_add_expense') + '</button>' +
+      '<button type="button" class="dash-qa-btn" data-action="dash-open-bank-paste">' + t('dash_qa_paste_bank') + '</button>' +
+      '<button type="button" class="dash-qa-btn" data-action="tab" data-tab="forecast">' + t('dash_qa_open_forecast') + '</button>' +
+      '<button type="button" class="dash-qa-btn" data-action="dash-open-search">' + t('dash_qa_open_search') + '</button>' +
+      '</div>'
+    );
+    return dashCardWrap('wide', '', inner, '');
+  }
+
+  var DASHBOARD_CARD_RENDERERS = {
+    balance: renderDashBalanceCard,
+    projected: renderDashProjectedCard,
+    commitments: renderDashCommitmentsCard,
+    netflow: renderDashNetflowCard,
+    cards: renderDashCardsCard,
+    loans: renderDashLoansCard,
+    yesterday: renderDashYesterdayCard,
+    avgspend: renderDashAvgSpendCard,
+    actioncenter: renderDashActionCenterCard,
+    quickactions: function () { return renderDashQuickActionsCard(); }
+  };
+
+  function renderDashboard() {
+    var d = computeDashboardData();
+    var layout = state.dashboardLayout;
+    var cardsHtml = layout.order
+      .filter(function (id) { return layout.hidden.indexOf(id) === -1; })
+      .map(function (id) { return DASHBOARD_CARD_RENDERERS[id] ? DASHBOARD_CARD_RENDERERS[id](d) : ''; })
+      .join('');
+
+    var header = (
+      '<div class="dash-header-row">' +
+      '<div><h2 class="section-title">' + t('dash_title') + '</h2><p class="section-desc" style="margin-bottom:0;">' + t('dash_desc') + '</p></div>' +
+      '<button type="button" class="btn-ghost dash-customize-btn" data-action="dash-open-customize">' + t('dash_customize_btn') + '</button>' +
+      '</div>'
+    );
+
+    return (
+      header +
+      '<div class="dash-grid" style="--dash-cols:' + layout.columns + ';">' + cardsHtml + '</div>' +
+      (dashCustomizeOpen ? renderDashCustomizePanel() : '') +
+      (dashBankPasteOpen ? renderDashBankPasteModal() : '')
+    );
+  }
+
+  function renderDashCustomizePanel() {
+    var layout = state.dashboardLayout;
+    var rows = layout.order.map(function (id) {
+      var hidden = layout.hidden.indexOf(id) !== -1;
+      return (
+        '<div class="dash-layout-row' + (hidden ? ' hidden-row' : '') + '" draggable="true" data-id="' + id + '">' +
+        '<span class="handle">⠿</span>' +
+        '<span class="name">' + t('dash_card_' + id) + '</span>' +
+        '<label class="switch"><input type="checkbox" data-action="dash-toggle-card-visibility" data-id="' + id + '"' + (hidden ? '' : ' checked') + '><span class="track"></span></label>' +
+        '</div>'
+      );
+    }).join('');
+
+    var colOptions = [2, 3, 4].map(function (n) {
+      return '<option value="' + n + '"' + (layout.columns === n ? ' selected' : '') + '>' + n + '</option>';
+    }).join('');
+
+    return (
+      '<div class="qa-backdrop open" data-action="dash-close-customize"></div>' +
+      '<div class="qa-sheet open dash-modal-sheet" role="dialog" aria-modal="true" aria-label="' + t('dash_customize_title') + '">' +
+      '<div class="qa-handle"></div>' +
+      '<div class="qa-head"><h2>' + t('dash_customize_title') + '</h2>' +
+      '<button type="button" class="qa-close" data-action="dash-close-customize">✕</button></div>' +
+      '<p class="section-desc">' + t('dash_customize_hint') + '</p>' +
+      '<div class="field"><label>' + t('dash_customize_columns_label') + '</label>' +
+      '<select id="dash-columns-select" data-action="dash-set-columns">' + colOptions + '</select></div>' +
+      '<div class="dash-layout-list">' + rows + '</div>' +
+      '<div class="btn-row" style="margin-top:14px;">' +
+      '<button type="button" class="btn-ghost" style="flex:1;" data-action="dash-reset-layout">' + t('dash_customize_reset_btn') + '</button>' +
+      '<button type="button" class="btn-primary" style="flex:1;" data-action="dash-close-customize">' + t('dash_customize_close_btn') + '</button>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderDashBankPasteModal() {
+    return (
+      '<div class="qa-backdrop open" data-action="dash-close-bank-paste"></div>' +
+      '<div class="qa-sheet open dash-modal-sheet" role="dialog" aria-modal="true" aria-label="' + t('dash_bank_paste_title') + '">' +
+      '<div class="qa-handle"></div>' +
+      '<div class="qa-head"><h2>' + t('dash_bank_paste_title') + '</h2>' +
+      '<button type="button" class="qa-close" data-action="dash-close-bank-paste">✕</button></div>' +
+      '<p class="section-desc">' + t('dash_bank_paste_hint') + '</p>' +
+      '<textarea id="dash-bank-paste-input" rows="4" placeholder="' + t('dash_bank_paste_placeholder') + '"></textarea>' +
+      (dashBankPasteError ? '<div class="err">' + escapeHtml(dashBankPasteError) + '</div>' : '') +
+      '<button type="button" class="qa-save" data-action="dash-apply-bank-paste">' + t('dash_bank_paste_btn') + '</button>' +
+      '</div>'
+    );
+  }
+
+  function renderCommitments() {
+    var mk = currentMonthKey();
+    var today = todayStr();
+    var c = computeUpcomingCommitments(mk, today);
+    var body;
+    if (c.items.length === 0) {
+      body = '<div class="card"><p class="empty">' + t('dash_commitments_empty') + '</p></div>';
+    } else {
+      var rows = c.items.map(function (it) {
+        var daysTxt = it.daysUntil === 0 ? t('dash_card_commitments_today')
+          : it.daysUntil === 1 ? t('dash_card_commitments_tomorrow')
+          : tf('dash_card_commitments_in_days', { days: it.daysUntil });
+        var sourceLabel = it.source === 'loan' ? t('dash_commitments_source_loan')
+          : it.source === 'subscription' ? t('dash_commitments_source_subscription')
+          : t('dash_commitments_source_recurring');
+        return (
+          '<div class="sub-row" data-action="tab" data-tab="' + it.tab + '" style="cursor:pointer;">' +
+          '<div class="info"><div class="name">' + escapeHtml(it.label) + '</div>' +
+          '<div class="meta">' + sourceLabel + ' · ' + formatDateArabic(it.date) + ' · ' + daysTxt + '</div></div>' +
+          '<div class="amt mono">' + formatCurrency(it.amount) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+      body = '<div class="card">' + rows + '</div>';
+    }
+    return (
+      '<button class="card-back-btn" data-action="tab" data-tab="dashboard">→ ' + t('dash_commitments_back') + '</button>' +
+      '<h2 class="section-title">' + t('dash_commitments_title') + '</h2>' +
+      '<p class="section-desc">' + tf('dash_card_commitments_count_line', { count: c.count }) + ' — ' + formatCurrency(c.total) + '</p>' +
+      body
+    );
   }
 
   // ---------------- Summary tab ----------------
@@ -2315,7 +2949,7 @@
   }
 
   function hasActiveTxFilter() {
-    return txSearchQuery.trim() !== '' || txFilterCategoryId !== '' || txFilterType !== '';
+    return txSearchQuery.trim() !== '' || txFilterCategoryId !== '' || txFilterType !== '' || txFilterDate !== '';
   }
 
   function getFilteredTransactions() {
@@ -2328,6 +2962,7 @@
       : state.transactions.filter(function (tx) { return monthKeyOf(tx.date) === currentMonth; });
 
     return source.filter(function (tx) {
+      if (txFilterDate && tx.date !== txFilterDate) return false;
       if (txFilterType && tx.type !== txFilterType) return false;
       if (txFilterCategoryId && tx.categoryId !== txFilterCategoryId) return false;
       if (q) {
@@ -2394,6 +3029,7 @@
       '</select>' +
       '<select id="tx-filter-category">' + catOptions + '</select>' +
       '</div>' +
+      (txFilterDate ? '<div class="tx-date-filter-note">' + tf('tx_date_filter_note', { date: formatDateArabic(txFilterDate) }) + '</div>' : '') +
       (hasActiveTxFilter() ? '<button type="button" class="clear-link" data-action="clear-tx-filters">✖ ' + t('clear_filters') + '</button>' : '') +
       '</div>'
     );
@@ -4163,6 +4799,21 @@
       render();
       return;
     }
+    if (el.dataset && el.dataset.action === 'dash-toggle-card-visibility') {
+      var dashToggleId = el.dataset.id;
+      var hiddenIdx = state.dashboardLayout.hidden.indexOf(dashToggleId);
+      if (el.checked && hiddenIdx !== -1) state.dashboardLayout.hidden.splice(hiddenIdx, 1);
+      if (!el.checked && hiddenIdx === -1) state.dashboardLayout.hidden.push(dashToggleId);
+      saveState();
+      render();
+      return;
+    }
+    if (el.id === 'dash-columns-select') {
+      state.dashboardLayout.columns = parseInt(el.value, 10);
+      saveState();
+      render();
+      return;
+    }
     if (el.id === 'inv-no-maturity') {
       var maturityInput = document.getElementById('inv-maturity');
       maturityInput.disabled = el.checked;
@@ -4267,26 +4918,7 @@
     }
     if (action === 'tab') {
       currentTab = btn.dataset.tab;
-      editingTransactionId = null;
-      editingCategoryId = null;
-      editingOpeningBalance = false;
-      selectedCardId = null;
-      editingCardId = null;
-      editingCardTxId = null;
-      selectedLoanId = null;
-      editingLoanId = null;
-      editingLoanPaymentId = null;
-      editingLoanSettlementId = null;
-      editingBankBalance = false;
-      editingSubId = null;
-      editingInvestmentId = null;
-      editingRecurringId = null;
-      budgetBulkPanelCategoryId = null;
-      chartActive = {};
-      txSearchQuery = '';
-      txFilterCategoryId = '';
-      txFilterType = '';
-      quickAddOpen = false;
+      resetTabTransientState();
       render();
       return;
     }
@@ -4455,6 +5087,7 @@
       txSearchQuery = '';
       txFilterCategoryId = '';
       txFilterType = '';
+      txFilterDate = '';
       render();
       return;
     }
@@ -4699,6 +5332,95 @@
       render();
       return;
     }
+
+    // ----- Dashboard -----
+    if (action === 'dash-open-customize') { dashCustomizeOpen = true; render(); return; }
+    if (action === 'dash-close-customize') { dashCustomizeOpen = false; render(); return; }
+    if (action === 'dash-reset-layout') {
+      if (confirm(t('confirm_reset_dashboard'))) {
+        state.dashboardLayout = defaultDashboardLayout();
+        saveState();
+        render();
+      }
+      return;
+    }
+    if (action === 'dash-open-yesterday') {
+      resetTabTransientState();
+      currentTab = 'transactions';
+      txFilterDate = dateMinusDays(todayStr(), 1);
+      render();
+      return;
+    }
+    if (action === 'dash-open-search') {
+      resetTabTransientState();
+      currentTab = 'transactions';
+      focusTxSearchOnce = true;
+      render();
+      return;
+    }
+    if (action === 'dash-quick-add') {
+      var dashQaType = btn.dataset.type;
+      if (dashQaType) quickAddType = dashQaType;
+      quickAddOpen = true;
+      render();
+      var dashQaAmt = document.getElementById('qa-amount');
+      if (dashQaAmt) dashQaAmt.focus();
+      return;
+    }
+    if (action === 'dash-open-bank-paste') { dashBankPasteOpen = true; dashBankPasteError = ''; render(); return; }
+    if (action === 'dash-close-bank-paste') { dashBankPasteOpen = false; dashBankPasteError = ''; render(); return; }
+    if (action === 'dash-apply-bank-paste') {
+      var pasteEl = document.getElementById('dash-bank-paste-input');
+      var pasteText = pasteEl ? pasteEl.value : '';
+      var extracted = extractAmountFromText(pasteText);
+      if (extracted == null) {
+        dashBankPasteError = t('dash_bank_paste_not_found');
+        render();
+        return;
+      }
+      dashBankPasteOpen = false;
+      dashBankPasteError = '';
+      quickAddType = 'expense';
+      quickAddPrefillAmount = String(extracted);
+      quickAddOpen = true;
+      render();
+      return;
+    }
+  });
+
+  app.addEventListener('dragstart', function (e) {
+    var row = e.target.closest('.dash-layout-row');
+    if (!row) return;
+    dashDragId = row.dataset.id;
+    row.classList.add('dragging');
+    if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dashDragId); } catch (err) { /* ignore */ } }
+  });
+  app.addEventListener('dragend', function (e) {
+    var row = e.target.closest('.dash-layout-row');
+    if (row) row.classList.remove('dragging');
+    dashDragId = null;
+  });
+  app.addEventListener('dragover', function (e) {
+    var row = e.target.closest('.dash-layout-row');
+    if (!row || !dashDragId) return;
+    e.preventDefault();
+  });
+  app.addEventListener('drop', function (e) {
+    var row = e.target.closest('.dash-layout-row');
+    if (!row || !dashDragId) return;
+    e.preventDefault();
+    var targetId = row.dataset.id;
+    if (targetId === dashDragId) return;
+    var order = state.dashboardLayout.order.slice();
+    var fromIdx = order.indexOf(dashDragId);
+    var toIdx = order.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, dashDragId);
+    state.dashboardLayout.order = order;
+    dashDragId = null;
+    saveState();
+    render();
   });
 
   function attachFirestoreListener(uid, opts) {
