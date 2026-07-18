@@ -360,14 +360,6 @@
   h2.section-title{ font-size:16px; font-weight:700; margin:4px 0 4px; }
   p.section-desc{ font-size:13px; color:var(--slate); margin:0 0 16px; line-height:1.6; }
 
-  /* ---------- Reports ---------- */
-  .cmp-bars{ display:flex; flex-direction:column; gap:3px; min-width:90px; }
-  .cmp-bar{ height:6px; border-radius:4px; background:var(--card-alt); }
-  .cmp-bar > div{ height:100%; border-radius:4px; }
-  .cmp-bar.income > div{ background:var(--success); }
-  .cmp-bar.expense > div{ background:var(--danger); }
-  td.net.positive{ color:var(--success); }
-  td.net.negative{ color:var(--danger); }
 
   /* ---------- Credit cards ---------- */
   .cards-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; margin-top:16px; }
@@ -471,11 +463,7 @@
   .cal-day .net.negative{ color:var(--danger); }
   @media (max-width:640px){ .cal-day{ min-height:42px; padding:4px; } .cal-day .net{ font-size:9.5px; } .cal-weekday{ font-size:9.5px; } }
 
-  /* ---------- Notifications ---------- */
-  .settings-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
-  .settings-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
-  .settings-item:last-child{ border-bottom:none; }
-  .settings-item .label{ font-size:13.5px; color:var(--ink-soft); }
+  /* ---------- Toggle switch (used by Dashboard customize panel) ---------- */
   .switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
   .switch input{ position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; }
   .switch .track{
@@ -830,7 +818,6 @@
       bankAccounts: [],
       bankBalanceUpdatedAt: null,
       recurringTransactions: [],
-      notificationSettings: { cardLimit: true, subscriptionsDue: true, budgetOverage: true, bankMismatch: true },
       dashboardLayout: defaultDashboardLayout()
     };
   }
@@ -905,7 +892,6 @@
       bankAccounts: migrateBankAccounts(parsed),
       bankBalanceUpdatedAt: parsed.bankBalanceUpdatedAt || null,
       recurringTransactions: parsed.recurringTransactions || [],
-      notificationSettings: Object.assign({}, d.notificationSettings, parsed.notificationSettings || {}),
       dashboardLayout: normalizeDashboardLayout(parsed.dashboardLayout)
     };
   }
@@ -1051,7 +1037,6 @@
       tab_dashboard: 'الرئيسية',
       tab_summary: 'الملخص الشهري',
       tab_transactions: 'العمليات اليومية',
-      tab_reports: 'التقارير',
       tab_cards: 'البطاقات الائتمانية',
       tab_categories: 'البنود',
       month_prev: 'السابق',
@@ -1130,16 +1115,6 @@
       th_amount: 'المبلغ',
       tx_empty: 'لا توجد عمليات مسجلة لهذا الشهر بعد',
       confirm_delete_tx: 'هل تريد حذف هذه العملية؟',
-      reports_title: 'مقارنة الأشهر',
-      reports_desc: 'مقارنة الرصيد الافتتاحي والمداخيل والمصاريف والرصيد الختامي عبر الأشهر.',
-      th_month: 'الشهر',
-      th_opening: 'الافتتاحي',
-      th_income: 'المداخيل',
-      th_expense: 'المصاريف',
-      th_net: 'صافي التغيّر',
-      th_closing: 'الختامي',
-      th_compare: 'مقارنة',
-      reports_empty: 'لا توجد بيانات كافية بعد لعرض التقرير',
       categories_title: 'إدارة بنود المداخيل والمصاريف',
       income_items_title: 'بنود المداخيل',
       expense_items_title: 'بنود المصاريف',
@@ -1173,7 +1148,6 @@
       tab_subscriptions: 'الاشتراكات',
       tab_investments: 'الاستثمارات',
       tab_charts: 'الرسوم البيانية',
-      tab_notifications: 'الإشعارات',
       tab_recurring: 'المتكررة',
 
       recurring_title: 'العمليات المتكررة',
@@ -1268,28 +1242,6 @@
       err_sub_amount: 'أدخل مبلغًا صحيحًا أكبر من صفر',
       err_sub_day: 'أدخل يومًا صحيحًا بين 1 و31',
 
-      notif_title: 'إدارة الإشعارات',
-      notif_desc: 'فعّل أو أوقف أنواع التنبيهات، وتابع التنبيهات النشطة حاليًا بناءً على بياناتك.',
-      notif_browser_perm_title: 'إشعارات المتصفح',
-      notif_browser_perm_desc: 'فعّل إشعارات المتصفح عشان توصلك التنبيهات فورًا كإشعار حقيقي على الجهاز وأنت فاتح التطبيق (حتى لو بتبويب أو تطبيق ثاني) — بدون ما تحتاج تدخل هذا التبويب يدويًا. على آيفون: يحتاج iOS 16.4 فأكثر مع إضافة التطبيق للشاشة الرئيسية أولًا، والتطبيق فاتح بالخلفية.',
-      notif_browser_perm_enable_btn: 'تفعيل إشعارات المتصفح',
-      notif_browser_perm_granted: '✓ إشعارات المتصفح مفعّلة',
-      notif_browser_perm_denied: 'الإشعارات مرفوضة من إعدادات المتصفح — فعّلها يدويًا من إعدادات الجهاز إذا حبيت',
-      notif_browser_perm_unsupported: 'متصفحك أو جهازك لا يدعم هذي الميزة حاليًا',
-      notif_settings_title: 'أنواع التنبيهات',
-      notif_type_cardLimit: 'اقتراب بطاقة ائتمانية من حدها',
-      notif_type_subscriptionsDue: 'اقتراب استحقاق اشتراك',
-      notif_type_budgetOverage: 'تجاوز الميزانية الشهرية',
-      notif_type_bankMismatch: 'وجود فرق في مطابقة الرصيد البنكي',
-      notif_active_title: 'التنبيهات الحالية',
-      notif_empty: 'لا توجد تنبيهات حاليًا',
-      notif_msg_card: 'استخدمت {pct}% من حد البطاقة ({used} من {limit})',
-      notif_msg_sub_today: 'اشتراك "{name}" يستحق اليوم ({amount})',
-      notif_msg_sub_days: 'اشتراك "{name}" يستحق خلال {days} يوم ({amount})',
-      notif_msg_budget_over: 'تجاوزت ميزانية "{name}" بمقدار {amount}',
-      notif_msg_income_under: 'دخل "{name}" أقل من الميزانية بمقدار {amount}',
-      notif_msg_bank: 'الفرق بين الرصيد البنكي ورصيد التطبيق: {amount}',
-
       stat_bank_balance: 'الرصيد البنكي الفعلي',
       edit_bank_balance_link: 'تعديل الرصيد البنكي',
       add_bank_balance_link: 'إضافة الرصيد البنكي',
@@ -1303,7 +1255,6 @@
       err_bank_no_accounts: 'أدخل رصيدًا صحيحًا لحساب واحد على الأقل',
 
       export_transactions_btn: 'تصدير العمليات (Excel)',
-      export_report_btn: 'تصدير التقرير (Excel)',
 
       backup_title: 'نسخ احتياطي واستعادة البيانات',
       backup_desc: 'بياناتك محفوظة في هذا المتصفح فقط. احفظ نسخة احتياطية بشكل دوري لحمايتها من الفقدان، خصوصًا إذا كنت تستخدم التطبيق من جوالك فقط.',
@@ -1832,79 +1783,6 @@
     return Math.round((candidate - todayMid) / 86400000);
   }
 
-  function computeNotifications() {
-    var list = [];
-    var s = state.notificationSettings;
-    var today = new Date();
-
-    if (s.cardLimit) {
-      state.creditCards.forEach(function (c) {
-        var balance = computeCardBalance(c.id);
-        var pct = c.limit > 0 ? Math.round((balance / c.limit) * 100) : 0;
-        if (pct >= 70) {
-          list.push({
-            level: pct >= 90 ? 'danger' : 'warning',
-            title: c.name,
-            message: tf('notif_msg_card', { pct: pct, used: formatCurrency(balance), limit: formatCurrency(c.limit) }),
-            tab: 'cards'
-          });
-        }
-      });
-    }
-
-    if (s.subscriptionsDue) {
-      state.subscriptions.forEach(function (sub) {
-        if (!sub.active) return;
-        var days = nextSubscriptionDueDays(sub, today);
-        if (days <= 5) {
-          list.push({
-            level: days <= 1 ? 'danger' : 'warning',
-            title: sub.name,
-            message: days === 0
-              ? tf('notif_msg_sub_today', { name: sub.name, amount: formatCurrency(sub.amount) })
-              : tf('notif_msg_sub_days', { name: sub.name, days: days, amount: formatCurrency(sub.amount) }),
-            tab: 'subscriptions'
-          });
-        }
-      });
-    }
-
-    if (s.budgetOverage) {
-      var mk = currentMonthKey();
-      var summary = computeMonthSummary(mk);
-      var actualByCategory = {};
-      summary.incomeByCategory.concat(summary.expenseByCategory).forEach(function (it) {
-        actualByCategory[it.category.id] = it.total;
-      });
-      state.categories.forEach(function (c) {
-        var budget = state.budgets[c.id] && state.budgets[c.id][mk];
-        if (!budget || budget <= 0) return;
-        var actual = actualByCategory[c.id] || 0;
-        if (c.type === 'expense' && actual > budget) {
-          list.push({ level: 'danger', title: c.name, message: tf('notif_msg_budget_over', { name: c.name, amount: formatCurrency(actual - budget) }), tab: 'budget' });
-        } else if (c.type === 'income' && actual < budget) {
-          list.push({ level: 'warning', title: c.name, message: tf('notif_msg_income_under', { name: c.name, amount: formatCurrency(budget - actual) }), tab: 'budget' });
-        }
-      });
-    }
-
-    var bankTotalForNotif = getBankBalanceTotal();
-    if (s.bankMismatch && bankTotalForNotif != null) {
-      var appBalance = computeMonthSummary(currentMonthKey()).closingBalance;
-      var diff = bankTotalForNotif - appBalance;
-      if (Math.abs(diff) > 0.009) {
-        list.push({
-          level: Math.abs(diff) >= 100 ? 'danger' : 'warning',
-          title: t('stat_bank_balance'),
-          message: tf('notif_msg_bank', { amount: (diff > 0 ? '+' : '') + formatCurrency(diff) }),
-          tab: 'summary'
-        });
-      }
-    }
-
-    return list;
-  }
-
   // Loan installments, active subscriptions, and scheduled-but-not-yet-fired
   // recurring expenses still due between today and the end of the given
   // month. Shared by the Dashboard commitments card and the full
@@ -1953,11 +1831,10 @@
     return { items: items, total: total, count: items.length };
   }
 
-  // The Dashboard's "يحتاج انتباه" (Action Center) — a fixed, dedicated rule
-  // set distinct from the toggleable Notifications-tab alerts
-  // (computeNotifications). Only conditions that call for an actual
-  // decision/action are included; each rule contributes AT MOST one grouped
-  // alert (never one per matching item), ordered roughly by urgency, capped
+  // The Dashboard's "يحتاج انتباه" (Action Center) — a fixed rule set. Only
+  // conditions that call for an actual decision/action are included; each
+  // rule contributes AT MOST one grouped alert (never one per matching
+  // item), ordered roughly by urgency, capped
   // to 5. Every alert carries a `tab` so clicking it jumps straight to the
   // relevant page.
   function computeActionCenterAlerts(currentBalance, projectedBalance, commitmentsTotal, hasForecast) {
@@ -2154,27 +2031,6 @@
     };
   }
 
-  function browserNotifSupported() { return typeof Notification !== 'undefined'; }
-
-  function checkAndFireBrowserNotifications() {
-    if (!browserNotifSupported() || Notification.permission !== 'granted') return;
-    computeNotifications().forEach(function (a) {
-      var key = a.title + '|' + a.message;
-      if (shownBrowserNotifKeys[key]) return;
-      shownBrowserNotifKeys[key] = true;
-      try {
-        new Notification(a.title, { body: a.message, icon: 'icons/icon-192.png' });
-      } catch (e) { /* notification blocked or unsupported context; ignore */ }
-    });
-  }
-
-  function maybeCheckBrowserNotifications() {
-    var now = Date.now();
-    if (now - lastBrowserNotifCheckTime < 30000) return;
-    lastBrowserNotifCheckTime = now;
-    checkAndFireBrowserNotifications();
-  }
-
   function csvEscape(val) {
     var s = val == null ? '' : String(val);
     if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
@@ -2297,9 +2153,6 @@
   var editingRecurringId = null;
   var lastRecurringCheckDate = null;
 
-  var shownBrowserNotifKeys = {};
-  var lastBrowserNotifCheckTime = 0;
-
   var txSearchQuery = '';
   var txFilterCategoryId = '';
   var txFilterType = '';
@@ -2376,7 +2229,6 @@
         generateDueRecurringTransactions();
         lastRecurringCheckDate = todayStr();
       }
-      maybeCheckBrowserNotifications();
       pruneStaleBudgetMonths();
       if (pendingUrlQuickAdd) {
         var qad = pendingUrlQuickAdd;
@@ -2574,13 +2426,11 @@
       { key: 'transactions', label: t('tab_transactions') },
       { key: 'recurring', label: t('tab_recurring') },
       { key: 'budget', label: t('tab_budget') },
-      { key: 'reports', label: t('tab_reports') },
       { key: 'cards', label: t('tab_cards') },
       { key: 'loans', label: t('tab_loans') },
       { key: 'subscriptions', label: t('tab_subscriptions') },
       { key: 'investments', label: t('tab_investments') },
       { key: 'charts', label: t('tab_charts') },
-      { key: 'notifications', label: t('tab_notifications') },
       { key: 'categories', label: t('tab_categories') },
       { key: 'forecast', label: t('tab_forecast') }
     ];
@@ -2621,13 +2471,11 @@
     if (currentTab === 'transactions') return renderTransactions();
     if (currentTab === 'recurring') return renderRecurring();
     if (currentTab === 'budget') return renderBudget();
-    if (currentTab === 'reports') return renderReports();
     if (currentTab === 'cards') return renderCards();
     if (currentTab === 'loans') return renderLoans();
     if (currentTab === 'subscriptions') return renderSubscriptions();
     if (currentTab === 'investments') return renderInvestments();
     if (currentTab === 'charts') return renderCharts();
-    if (currentTab === 'notifications') return renderNotifications();
     if (currentTab === 'categories') return renderCategories();
     if (currentTab === 'forecast') return renderForecast();
     if (currentTab === 'commitments') return renderCommitments();
@@ -2721,7 +2569,7 @@
       '<div class="dash-row"><span class="dash-row-label">' + t('dash_card_netflow_expense') + '</span><span class="dash-row-val negative mono">' + formatCurrency(d.totalExpense) + '</span></div>' +
       '<div class="dash-row dash-row-net"><span class="dash-row-label">' + t('dash_card_netflow_net') + '</span><span class="dash-row-val ' + (netPos ? 'positive' : 'negative') + ' mono">' + (netPos ? '+' : '') + formatCurrency(d.netFlow) + '</span></div>'
     );
-    return dashCardWrap('lg', 'data-action="tab" data-tab="reports"', inner, '');
+    return dashCardWrap('lg', 'data-action="tab" data-tab="summary"', inner, '');
   }
 
   function renderDashCardsCard(d) {
@@ -3054,7 +2902,8 @@
       '<div class="grid-2">' +
       breakdown(t('breakdown_income_title'), s.incomeByCategory, 'income') +
       breakdown(t('breakdown_expense_title'), s.expenseByCategory, 'expense') +
-      '</div>'
+      '</div>' +
+      renderBackupCard()
     );
   }
 
@@ -3193,49 +3042,6 @@
       filterBar +
       '<div id="tx-list-body">' + renderTransactionListBody() + '</div>' +
       '</div>'
-    );
-  }
-
-  // ---------------- Reports tab ----------------
-  function renderReports() {
-    var monthKeys = getReportMonthKeys();
-    if (monthKeys.length === 0) {
-      return '<h2 class="section-title">' + t('reports_title') + '</h2><p class="section-desc">' + t('reports_desc') + '</p><div class="card"><p class="empty">' + t('reports_empty') + '</p></div>';
-    }
-    var rows = monthKeys.map(function (mk) { return computeMonthSummary(mk); });
-    var maxVal = 1;
-    rows.forEach(function (r) { maxVal = Math.max(maxVal, r.totalIncome, r.totalExpense); });
-
-    var trs = rows.map(function (r) {
-      var net = r.totalIncome - r.totalExpense;
-      var netCls = net >= 0 ? 'positive' : 'negative';
-      var incPct = Math.round((r.totalIncome / maxVal) * 100);
-      var expPct = Math.round((r.totalExpense / maxVal) * 100);
-      return (
-        '<tr>' +
-        '<td>' + formatMonthLabel(r.monthKey) + '</td>' +
-        '<td class="mono">' + formatCurrency(r.openingBalance) + '</td>' +
-        '<td class="mono" style="color:var(--success)">' + formatCurrency(r.totalIncome) + '</td>' +
-        '<td class="mono" style="color:var(--danger)">' + formatCurrency(r.totalExpense) + '</td>' +
-        '<td class="mono net ' + netCls + '">' + (net >= 0 ? '+' : '') + formatCurrency(net) + '</td>' +
-        '<td class="mono" style="font-weight:700;">' + formatCurrency(r.closingBalance) + '</td>' +
-        '<td><div class="cmp-bars">' +
-        '<div class="cmp-bar income"><div style="width:' + incPct + '%"></div></div>' +
-        '<div class="cmp-bar expense"><div style="width:' + expPct + '%"></div></div>' +
-        '</div></td>' +
-        '</tr>'
-      );
-    }).join('');
-
-    return (
-      '<h2 class="section-title">' + t('reports_title') + '</h2>' +
-      '<p class="section-desc">' + t('reports_desc') + '</p>' +
-      '<div class="card list-card"><div class="head-row"><div></div>' +
-      '<button class="export-btn" data-action="export-report">⬇️ ' + t('export_report_btn') + '</button></div>' +
-      '<div class="table-scroll"><table><thead><tr>' +
-      '<th>' + t('th_month') + '</th><th>' + t('th_opening') + '</th><th>' + t('th_income') + '</th>' +
-      '<th>' + t('th_expense') + '</th><th>' + t('th_net') + '</th><th>' + t('th_closing') + '</th><th>' + t('th_compare') + '</th>' +
-      '</tr></thead><tbody>' + trs + '</tbody></table></div></div>'
     );
   }
 
@@ -4184,51 +3990,8 @@
   }
 
   // ---------------- Notifications tab ----------------
-  function renderBrowserNotifPermCard() {
-    var statusHtml;
-    if (!browserNotifSupported()) {
-      statusHtml = '<p class="warn-text">' + t('notif_browser_perm_unsupported') + '</p>';
-    } else if (Notification.permission === 'granted') {
-      statusHtml = '<p style="font-size:12.5px;color:var(--success);font-weight:700;">' + t('notif_browser_perm_granted') + '</p>';
-    } else if (Notification.permission === 'denied') {
-      statusHtml = '<p class="warn-text">' + t('notif_browser_perm_denied') + '</p>';
-    } else {
-      statusHtml = '<button type="button" class="btn-primary" data-action="request-notif-permission">' + t('notif_browser_perm_enable_btn') + '</button>';
-    }
+  function renderBackupCard() {
     return (
-      '<div class="card" style="margin-bottom:16px;">' +
-      '<h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('notif_browser_perm_title') + '</h3>' +
-      '<p style="font-size:12.5px;color:var(--slate);margin:0 0 14px;line-height:1.6;">' + t('notif_browser_perm_desc') + '</p>' +
-      statusHtml +
-      '</div>'
-    );
-  }
-
-  function renderNotifications() {
-    var types = ['cardLimit', 'subscriptionsDue', 'budgetOverage', 'bankMismatch'];
-    var settingsHtml = types.map(function (key) {
-      var checked = state.notificationSettings[key] ? ' checked' : '';
-      return (
-        '<div class="settings-item"><span class="label">' + t('notif_type_' + key) + '</span>' +
-        '<label class="switch"><input type="checkbox" data-action="toggle-notif-setting" data-key="' + key + '"' + checked + '><span class="track"></span></label></div>'
-      );
-    }).join('');
-
-    var alerts = computeNotifications();
-    var alertsHtml;
-    if (alerts.length === 0) {
-      alertsHtml = '<p class="empty">' + t('notif_empty') + '</p>';
-    } else {
-      alertsHtml = alerts.map(function (a) {
-        var icon = a.level === 'danger' ? '🔴' : '🟡';
-        return (
-          '<div class="alert-item ' + a.level + '"><span class="icon">' + icon + '</span>' +
-          '<div class="body"><div class="title">' + escapeHtml(a.title) + '</div><div class="msg">' + escapeHtml(a.message) + '</div></div></div>'
-        );
-      }).join('');
-    }
-
-    var backupCard = (
       '<div class="card" style="margin-top:16px;">' +
       '<h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('backup_title') + '</h3>' +
       '<p style="font-size:12.5px;color:var(--slate);margin:0 0 16px;line-height:1.6;">' + t('backup_desc') + '</p>' +
@@ -4238,19 +4001,6 @@
       '</div>' +
       '<input type="file" id="backup-file-input" accept="application/json" style="display:none;">' +
       '</div>'
-    );
-
-    return (
-      '<h2 class="section-title">' + t('notif_title') + '</h2>' +
-      '<p class="section-desc">' + t('notif_desc') + '</p>' +
-      renderBrowserNotifPermCard() +
-      '<div class="grid-2">' +
-      '<div class="card"><h3 style="margin:0 0 6px;font-size:15px;font-weight:700;">' + t('notif_settings_title') + '</h3>' +
-      '<div class="settings-list">' + settingsHtml + '</div></div>' +
-      '<div class="card"><h3 style="margin:0 0 14px;font-size:15px;font-weight:700;">' + t('notif_active_title') + '</h3>' +
-      alertsHtml + '</div>' +
-      '</div>' +
-      backupCard
     );
   }
 
@@ -4947,12 +4697,6 @@
       render();
       return;
     }
-    if (el.dataset && el.dataset.action === 'toggle-notif-setting') {
-      state.notificationSettings[el.dataset.key] = el.checked;
-      saveState();
-      render();
-      return;
-    }
     if (el.dataset && el.dataset.action === 'dash-toggle-card-visibility') {
       var dashToggleId = el.dataset.id;
       var hiddenIdx = state.dashboardLayout.hidden.indexOf(dashToggleId);
@@ -5256,26 +5000,8 @@
       exportCsv('transactions.csv', rowsX);
       return;
     }
-    if (action === 'export-report') {
-      var monthKeysX = getReportMonthKeys().slice().reverse();
-      var rowsR = [[t('th_month'), t('th_opening'), t('th_income'), t('th_expense'), t('th_net'), t('th_closing')]];
-      monthKeysX.forEach(function (mk) {
-        var r = computeMonthSummary(mk);
-        rowsR.push([formatMonthLabel(r.monthKey), r.openingBalance, r.totalIncome, r.totalExpense, r.totalIncome - r.totalExpense, r.closingBalance]);
-      });
-      exportCsv('monthly-report.csv', rowsR);
-      return;
-    }
     if (action === 'export-backup') { exportBackupJson(); return; }
     if (action === 'import-backup') { document.getElementById('backup-file-input').click(); return; }
-    if (action === 'request-notif-permission') {
-      if (!browserNotifSupported()) return;
-      Notification.requestPermission().then(function () {
-        checkAndFireBrowserNotifications();
-        render();
-      });
-      return;
-    }
 
     // ----- Loans -----
     if (action === 'open-loan') { selectedLoanId = btn.dataset.id; editingLoanPaymentId = null; editingLoanSettlementId = null; render(); return; }
@@ -5627,10 +5353,6 @@
   });
 
   render();
-
-  setInterval(function () {
-    if (currentUser && state.openingBalance !== null) checkAndFireBrowserNotifications();
-  }, 60000);
 })();
 </script>
 </body>
